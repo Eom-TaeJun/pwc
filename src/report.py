@@ -375,6 +375,12 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 실시간 예측 시스템에서는 발표 당시 원본값(real-time vintage)과 차이가 발생할 수 있으며,
 이 분석의 Granger 인과관계는 **역사적 수정값 기준**임을 명기합니다.
 
+**⚠ 구조 변화(Structural Break) 주의**: 분석 기간({period.get('start', '')[:7]} ~ {period.get('end', '')[:7]}, {period.get('n_obs', 'N/A')}개월)에는
+성격이 다른 통화정책 국면이 혼재합니다.
+- **ZLB(Zero Lower Bound) 구간**: 2009-01 ~ 2015-12, 2020-03 ~ 2022-02 — 금리 0%로 FEDFUNDS 등 금리 계열의 Granger 인과관계가 정상 작동하지 않을 수 있음
+- **GMM 클러스터**: 전 기간 분포 기준으로 경계 산정. 특정 시기를 집중 분석할 경우 최근 창(예: 2015 이후)으로 재추정 권고
+- Granger STRONG 결과가 많을 경우 데이터 길이({period.get('n_obs', 'N/A')}개월)에 의한 과소 p-value 가능성을 검토하십시오
+
 """
 
     # ── Appendix B: 전체 데이터 테이블 ────────────────────────────

@@ -31,12 +31,12 @@
 </style>
 
 </head><body>
-<h1>산업생산 Neutral 국면: Fed Funds Rate Granger 검증상 6개월 선행</h1>
+<h1>산업생산 Expansion 국면: Fed Funds Rate Granger 검증상 6개월 선행</h1>
 <p><strong>생성일</strong>: 2026-03-03 | <strong>Target</strong>: 산업생산지수 MoM% | <strong>출처</strong>: FRED</p>
 <hr />
 <h2>Executive Summary</h2>
 <blockquote>
-<p><strong>한 줄 결론</strong>: 현재 산업생산 레짐: Neutral. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할</p>
+<p><strong>한 줄 결론</strong>: 현재 산업생산 레짐: Expansion. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할</p>
 </blockquote>
 <table>
 <thead>
@@ -48,11 +48,11 @@
 <tbody>
 <tr>
 <td><strong>현재 레짐</strong></td>
-<td><strong>Neutral</strong> (신뢰도 99.9%)</td>
+<td><strong>고모멘텀</strong> (Expansion, 신뢰도 37.4%)</td>
 </tr>
 <tr>
 <td>레짐 확률 분포</td>
-<td>Expansion: 0.0%</td>
+<td>Neutral: 44.8%</td>
 </tr>
 <tr>
 <td>핵심 선행지표</td>
@@ -70,10 +70,14 @@
 </table>
 <h2>1. 지금 어디에 있는가?</h2>
 <blockquote>
-<p><strong>핵심 발견</strong>: 미국 산업생산(INDPRO)은 현재 <strong>Neutral</strong> 국면에 있으며,
-Shannon Entropy 0.001로 레짐 전환 가능성이 낮은 안정적 상태입니다.</p>
+<p><strong>핵심 발견</strong>: 미국 산업생산(INDPRO)은 현재 <strong>고모멘텀</strong> 국면에 있으며,
+Shannon Entropy 0.626로 레짐 전환 가능성이 낮은 안정적 상태입니다.</p>
 </blockquote>
 <p>GMM 3-state 모델이 309개월 데이터에서 식별한 현재 레짐:</p>
+<blockquote>
+<p>※ 레짐은 INDPRO MoM% <strong>성장률 변동성</strong> 기준으로 분류합니다. NBER 경기확장·침체와 직접 대응하지 않습니다.
+고모멘텀(MoM% 장기 평균 대비 +1σ 이상) / 안정성장(정상 범위) / 저모멘텀(−1σ 이하 또는 음수)</p>
+</blockquote>
 <table>
 <thead>
 <tr>
@@ -85,24 +89,24 @@ Shannon Entropy 0.001로 레짐 전환 가능성이 낮은 안정적 상태입�
 <tbody>
 <tr>
 <td><strong>레짐</strong></td>
-<td>Neutral</td>
-<td>중립 국면</td>
+<td><strong>고모멘텀</strong> (Expansion)</td>
+<td>GMM 사후확률 최댓값 기준</td>
 </tr>
 <tr>
 <td>신뢰도</td>
-<td>99.9%</td>
-<td>Shannon Entropy 0.001</td>
+<td>37.4%</td>
+<td>Shannon Entropy 0.626 (GMM 사후확률 기반)</td>
 </tr>
 <tr>
 <td>레짐 확률</td>
-<td>Expansion: 0.0%</td>
-<td>Neutral: 100.0%</td>
+<td>Neutral: 44.8%</td>
+<td>Contraction: 0.0%</td>
 </tr>
 </tbody>
 </table>
-<p>Neutral (신뢰도 99.9%)</p>
+<p>Expansion (신뢰도 37.4%)</p>
 <blockquote>
-<p><strong>⚠ 해석 주의</strong>: 신뢰도 99.9%는 "현재 시점을 Neutral로 분류할 확률"이며,
+<p><strong>⚠ 해석 주의</strong>: 신뢰도 37.4%는 "현재 데이터점이 고모멘텀(Expansion) 클러스터에 속할 GMM 사후확률"이며,
 레짐 분류의 절대적 정확성을 보장하지 않습니다.
 GMM 모델은 <strong>구조 변화 구간(2008~2009 금융위기, 2020 팬데믹)에서 신뢰도가 저하</strong>됩니다.
 해당 기간 데이터가 포함된 전체 추정 결과이므로 최근 구간(2020 이후) 별도 검증을 권고합니다.</p>
@@ -110,17 +114,16 @@ GMM 모델은 <strong>구조 변화 구간(2008~2009 금융위기, 2020 팬데�
 <p><img alt="레짐 타임라인" src="outputs/charts/regime_timeline_20260303.png" /></p>
 <h2>2. 무엇이 먼저 움직이는가?</h2>
 <blockquote>
-<p><strong>핵심 발견</strong>: Granger 검증에서 <strong>12개 Factor</strong>의 선행성이 확인되었으나, Cross-correlation과의 양방법 합의는 없습니다. 두 방법의 불일치는 최근 통화정책 효과 약화 등 <strong>구조 변화 가능성</strong>을 시사합니다 — 분기별 재검증이 필요합니다.</p>
+<p><strong>핵심 발견</strong>: <strong>Granger 인과성 검증</strong>에서 Fed Funds Rate 등 <strong>12개 Factor</strong>가 INDPRO를 앞서 움직임을 확인했습니다. Cross-correlation 최적 Lag가 음수(−)로 나타나는 경우는 Granger 인과 방향(Factor→INDPRO)과 다른 방향, 즉 INDPRO 변화에 대한 정책·지표의 <strong>반응 함수</strong>를 포착한 피드백 루프입니다.</p>
 </blockquote>
 <p><img alt="The Signal — 선행지표 vs INDPRO" src="outputs/charts/signal_chart_20260303.png" /></p>
 <table>
 <thead>
 <tr>
 <th>지표명</th>
-<th>최적 Lag</th>
+<th>Granger 선행</th>
 <th>강도</th>
-<th>p-value</th>
-<th>검증 방법</th>
+<th>Cross-corr Lag</th>
 </tr>
 </thead>
 <tbody>
@@ -128,56 +131,51 @@ GMM 모델은 <strong>구조 변화 구간(2008~2009 금융위기, 2020 팬데�
 <td>Fed Funds Rate</td>
 <td>+6개월</td>
 <td>STRONG</td>
-<td>0.0000</td>
-<td>Granger만</td>
+<td>-11개월</td>
 </tr>
 <tr>
 <td>실업률</td>
 <td>+7개월</td>
 <td>STRONG</td>
-<td>0.0000</td>
-<td>Granger만</td>
+<td>0개월</td>
 </tr>
 <tr>
 <td>비농업고용 MoM 증감(천명)</td>
 <td>+11개월</td>
 <td>STRONG</td>
-<td>0.0000</td>
-<td>Granger만</td>
+<td>-12개월</td>
 </tr>
 <tr>
 <td>M2 통화량 MoM%</td>
 <td>+5개월</td>
 <td>STRONG</td>
-<td>0.0000</td>
-<td>Granger만</td>
+<td>0개월</td>
 </tr>
 <tr>
 <td>WTI 유가 MoM%</td>
 <td>+1개월</td>
 <td>STRONG</td>
-<td>0.0000</td>
-<td>Granger만</td>
+<td>-10개월</td>
 </tr>
 <tr>
 <td>VIX 변동성지수</td>
 <td>+2개월</td>
 <td>STRONG</td>
-<td>0.0000</td>
-<td>Granger만</td>
+<td>-8개월</td>
 </tr>
 </tbody>
 </table>
 <blockquote>
-<p><strong>왜 두 가지 방법인가?</strong> Granger는 차분 기준 시간적 인과성,
-Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
-양방법 합의 = 강한 증거 / 불일치 = 구조 변화 경고 신호.</p>
+<p><strong>Lag 해석</strong>: Granger Lag(+)는 '해당 Factor → INDPRO' 선행 방향. Cross-corr Lag(−)는 'INDPRO 변화 → 해당 Factor' 반응 방향. 부호가 반대인 경우 <strong>피드백 루프</strong>를 의미하며, 선행 관계 자체는 Granger 기준으로 판단합니다.</p>
+<p><strong>방법론 노트</strong>: Granger는 차분 기준 시간적 인과성(Factor→INDPRO),
+Cross-correlation은 MoM% 변환 기준 최적 lag 탐색(양방향 탐색)입니다.
+두 방법이 <strong>동일 방향</strong>이면 강한 선행 증거 / <strong>반대 부호</strong>면 피드백 루프.</p>
 </blockquote>
 <p><img alt="Factor 상관관계 히트맵" src="outputs/charts/correlation_heatmap_20260303.png" /></p>
 <h2>3. 얼마나 확신할 수 있는가?</h2>
 <blockquote>
 <p><strong>핵심 발견</strong>: LASSO·Random Forest·Rolling OLS 세 방법이 공통으로 지목한 Factor는
-<strong>PAYEMS, HOUST, VIXCLS, DCOILWTICO, M2SL, DGS2, DGS10, UNRATE, RETAILSMNSA, DEXUSEU, PPIACO, UMCSENT</strong>입니다. 단일 방법 의존보다 신뢰도가 높습니다.</p>
+<strong>VIXCLS, DGS10, DGS2, DEXUSEU, M2SL, PPIACO, DCOILWTICO, UMCSENT, HOUST, UNRATE, RETAILSMNSA, PAYEMS</strong>입니다. 단일 방법 의존보다 신뢰도가 높습니다.</p>
 </blockquote>
 <h3>LASSO + ML 교차검증</h3>
 <p>LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Factor:</p>
@@ -268,7 +266,7 @@ Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
 </blockquote>
 <h2>4. 무엇을 해야 하는가?</h2>
 <blockquote>
-<p><strong>핵심 발견</strong>: 현재 <strong>Neutral</strong> 국면에서 선행지표가 보내는 신호에 따라
+<p><strong>핵심 발견</strong>: 현재 <strong>고모멘텀(Expansion)</strong> 국면에서 선행지표가 보내는 신호에 따라
 세 가지 시나리오로 대응 체계를 분리합니다.</p>
 </blockquote>
 <h3>시나리오별 대응 프레임</h3>
@@ -285,19 +283,19 @@ Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
 <tr>
 <td><strong>Expansion</strong></td>
 <td>선행 Factor 지속 상승</td>
-<td>비농업고용 MoM 증감(천명)(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월)</td>
+<td>VIX 변동성지수(매월) / 10Y Treasury Yield(매월) / 2Y Treasury Yield(매월)</td>
 <td>현 포지션 유지, 레짐 전환 신호 모니터링</td>
 </tr>
 <tr>
 <td><strong>Neutral</strong></td>
 <td>혼조 — 방향성 불확실</td>
-<td>비농업고용 MoM 증감(천명)(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월)</td>
+<td>VIX 변동성지수(매월) / 10Y Treasury Yield(매월) / 2Y Treasury Yield(매월)</td>
 <td>분기 1회 Factor Pool 전체 재평가</td>
 </tr>
 <tr>
 <td><strong>Contraction</strong></td>
 <td>선행 Factor 하락 전환</td>
-<td>비농업고용 MoM 증감(천명)(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월)</td>
+<td>VIX 변동성지수(매월) / 10Y Treasury Yield(매월) / 2Y Treasury Yield(매월)</td>
 <td>조기 경보 발동, 클라이언트 리스크 재검토</td>
 </tr>
 </tbody>
@@ -305,7 +303,7 @@ Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
 <h3>모니터링 우선순위</h3>
 <p>서베이 기반 지표(UMCSENT)는 후행 가능성 있음</p>
 <h3>클라이언트 설명 프레임</h3>
-<p>현재 산업생산 레짐: Neutral. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할</p>
+<p>현재 산업생산 레짐: Expansion. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할</p>
 <hr />
 <p><em>본 보고서는 FRED 공공 데이터를 기반으로 자동 생성되었습니다.
 수치 해석 시 출처(FRED)와 분석 기간을 반드시 명기하십시오.</em></p>
@@ -536,56 +534,56 @@ Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
 <td>Fed Funds Rate</td>
 <td>STRONG</td>
 <td>6</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>UNRATE</td>
 <td>실업률</td>
 <td>STRONG</td>
 <td>7</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>PAYEMS</td>
 <td>비농업고용 MoM 증감(천명)</td>
 <td>STRONG</td>
 <td>11</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>M2SL</td>
 <td>M2 통화량 MoM%</td>
 <td>STRONG</td>
 <td>5</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>DCOILWTICO</td>
 <td>WTI 유가 MoM%</td>
 <td>STRONG</td>
 <td>1</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>VIXCLS</td>
 <td>VIX 변동성지수</td>
 <td>STRONG</td>
 <td>2</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>DGS2</td>
 <td>2Y Treasury Yield</td>
 <td>STRONG</td>
 <td>2</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>PPIACO</td>
 <td>PPI MoM%</td>
 <td>STRONG</td>
 <td>1</td>
-<td>0.0000</td>
+<td>&lt; 0.0001</td>
 </tr>
 <tr>
 <td>DGS10</td>
