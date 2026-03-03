@@ -1,8 +1,12 @@
 """Granger 인과관계 검증 (ADF 정상성 변환 → F-test, EIMAS 이식)."""
-import pandas as pd
-from statsmodels.tsa.stattools import grangercausalitytests, adfuller
+import logging
 
-from src.config import GRANGER_MAX_LAG, GRANGER_STRONG, GRANGER_MODERATE, GRANGER_WEAK
+import pandas as pd
+from statsmodels.tsa.stattools import adfuller, grangercausalitytests
+
+from src.config import GRANGER_MAX_LAG, GRANGER_MODERATE, GRANGER_STRONG, GRANGER_WEAK
+
+logger = logging.getLogger(__name__)
 
 
 def _stationary(s: pd.Series) -> pd.Series:
@@ -44,5 +48,5 @@ def run_granger(X: pd.DataFrame, y: pd.Series,
                                  "optimal_lag": best_lag, "p_value": round(best_p, 6),
                                  "f_statistic": round(best_f, 4), "strength": strength})
         except Exception as e:
-            print(f"  [Granger] {col} 실패: {e}")
+            logger.warning("Granger %s skip: %s: %s", col, type(e).__name__, e)
     return sorted(results, key=lambda r: r["p_value"])

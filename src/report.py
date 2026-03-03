@@ -74,18 +74,39 @@ def _dynamic_title(analysis: dict) -> str:
 
 
 def _scenario_table(reg_label: str, granger: list, lead_lag: list) -> str:
-    """레짐별 3시나리오 + 모니터링 Factor."""
-    granger_ids = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
+    """레짐별 3시나리오 + Factor별 최적 lag 반영한 모니터링 주기."""
+    granger_strong = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
     leading = [r for r in lead_lag if r.get("is_leading")]
     lead_ids = {r["factor"] for r in leading}
-    watch = ", ".join(granger_ids & lead_ids) or ", ".join(list(granger_ids)[:3]) or "N/A"
+    consensus = granger_strong & lead_ids
+    priority = consensus or granger_strong
+
+    # 최적 lag 기반 모니터링 주기 계산 (lag ≤ 3개월 → 월간, 4~6개월 → 격월, 7개월+ → 분기)
+    lag_map = {r["factor"]: r["optimal_lag"] for r in lead_lag}
+    def _freq(fid: str) -> str:
+        lag = lag_map.get(fid, 99)
+        if lag <= 3:
+            return "매월"
+        if lag <= 6:
+            return "격월"
+        return "분기"
+
+    if priority:
+        # 최상위 3개 + 주기 표시
+        top3 = list(priority)[:3]
+        label_map = {r["factor"]: r["label"] for r in lead_lag}
+        watch_detail = " / ".join(
+            f"{label_map.get(f, f)}({_freq(f)})" for f in top3
+        )
+    else:
+        watch_detail = "전체 Factor Pool 분기 점검"
 
     rows = [
-        ["**Expansion**", "선행 Factor 계속 상승", f"{watch}", "현 포지션 유지, 레짐 전환 모니터링"],
-        ["**Neutral**", "혼조 — 방향성 불확실", f"{watch}", "분기 1회 Factor Pool 재평가"],
-        ["**Contraction**", "선행 Factor 하락 전환", f"{watch}", "조기 경보 발동, 리스크 재검토"],
+        ["**Expansion**", "선행 Factor 지속 상승", watch_detail, "현 포지션 유지, 레짐 전환 신호 모니터링"],
+        ["**Neutral**", "혼조 — 방향성 불확실", watch_detail, "분기 1회 Factor Pool 전체 재평가"],
+        ["**Contraction**", "선행 Factor 하락 전환", watch_detail, "조기 경보 발동, 클라이언트 리스크 재검토"],
     ]
-    return _fmt_table(rows, ["시나리오", "신호 조건", "핵심 모니터링 Factor", "대응 권고"])
+    return _fmt_table(rows, ["시나리오", "신호 조건", "핵심 모니터링 Factor(주기)", "대응 권고"])
 
 
 def build_factor_report(
@@ -180,10 +201,28 @@ GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별�
         for r in ordered_leading
     ]
 
+    # 핵심 발견 문구 — 합의 0개일 때 불일치 원인을 명시해 "So what?" 답변 가능하게
+    if consensus:
+        s2_finding = (
+            f"Granger 인과성과 Cross-correlation이 **동시에 확인한 선행지표 {len(consensus)}개**는 "
+            f"INDPRO 변곡점을 수개월 앞서 포착합니다."
+        )
+    elif granger_ids:
+        s2_finding = (
+            f"Granger 검증에서 **{len(granger_ids)}개 Factor**의 선행성이 확인되었으나, "
+            f"Cross-correlation과의 양방법 합의는 없습니다. "
+            f"두 방법의 불일치는 최근 통화정책 효과 약화 등 **구조 변화 가능성**을 시사합니다 — "
+            f"분기별 재검증이 필요합니다."
+        )
+    else:
+        s2_finding = (
+            "현재 데이터 기간에서 통계적으로 유의한 선행지표가 확인되지 않았습니다. "
+            "데이터 기간·변환 방식을 점검하거나, 레짐 전환 구간(금융위기·팬데믹) 제외 후 재분석을 권고합니다."
+        )
+
     s2 = f"""## 2. 무엇이 먼저 움직이는가?
 
-> **핵심 발견**: Granger 인과성과 Cross-correlation이 **동시에 확인한 선행지표 {len(consensus)}개**는
-> INDPRO 변곡점을 수개월 앞서 포착합니다.
+> **핵심 발견**: {s2_finding}
 
 """
     if chart_paths.get("signal_chart"):
@@ -193,11 +232,18 @@ GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별�
         s2 += f"""{_fmt_table(ll_rows, ['지표명', '선행 기간', '상관계수', '검증 방법'])}
 
 """
-    else:
-        s2 += "_선행 Factor 없음 — 데이터 재확인 필요_\n\n"
+    elif granger_ids:
+        # Granger만 존재할 때는 Granger 결과 표시
+        g_rows = [
+            [r["label"], f"+{r['optimal_lag']}개월", r["strength"], f"{r['p_value']:.4f}", "Granger만"]
+            for r in granger if r["strength"] in ("STRONG", "MODERATE")
+        ][:6]
+        if g_rows:
+            s2 += _fmt_table(g_rows, ["지표명", "최적 Lag", "강도", "p-value", "검증 방법"]) + "\n\n"
 
-    s2 += """> **왜 두 가지 방법인가?** Granger 검증은 통계적 선행성(차분 기준),
-> Cross-correlation은 원시 변화율 기준입니다. 양방법 합의 시 선행성 신뢰도가 올라갑니다.
+    s2 += """> **왜 두 가지 방법인가?** Granger는 차분 기준 시간적 인과성,
+> Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
+> 양방법 합의 = 강한 증거 / 불일치 = 구조 변화 경고 신호.
 """
     if chart_paths.get("correlation_heatmap"):
         s2 += f"\n![Factor 상관관계 히트맵]({chart_paths['correlation_heatmap']})\n"

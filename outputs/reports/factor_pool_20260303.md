@@ -32,27 +32,28 @@ GMM 3-state 모델이 309개월 데이터에서 식별한 현재 레짐:
 
 Neutral (신뢰도 99.9%)
 
-![레짐 타임라인](outputs/charts/regime_timeline_20260303.png)
-
 
 ## 2. 무엇이 먼저 움직이는가?
 
-> **핵심 발견**: Granger 인과성과 Cross-correlation이 **동시에 확인한 선행지표 0개**는
-> INDPRO 변곡점을 수개월 앞서 포착합니다.
+> **핵심 발견**: Granger 검증에서 **12개 Factor**의 선행성이 확인되었으나, Cross-correlation과의 양방법 합의는 없습니다. 두 방법의 불일치는 최근 통화정책 효과 약화 등 **구조 변화 가능성**을 시사합니다 — 분기별 재검증이 필요합니다.
 
-![The Signal — 선행지표 vs INDPRO](outputs/charts/signal_chart_20260303.png)
+| 지표명 | 최적 Lag | 강도 | p-value | 검증 방법 |
+| --- | --- | --- | --- | --- |
+| Fed Funds Rate | +6개월 | STRONG | 0.0000 | Granger만 |
+| 실업률 | +7개월 | STRONG | 0.0000 | Granger만 |
+| 비농업고용 MoM 증감(천명) | +11개월 | STRONG | 0.0000 | Granger만 |
+| M2 통화량 MoM% | +5개월 | STRONG | 0.0000 | Granger만 |
+| WTI 유가 MoM% | +1개월 | STRONG | 0.0000 | Granger만 |
+| VIX 변동성지수 | +2개월 | STRONG | 0.0000 | Granger만 |
 
-_선행 Factor 없음 — 데이터 재확인 필요_
-
-> **왜 두 가지 방법인가?** Granger 검증은 통계적 선행성(차분 기준),
-> Cross-correlation은 원시 변화율 기준입니다. 양방법 합의 시 선행성 신뢰도가 올라갑니다.
-
-![Factor 상관관계 히트맵](outputs/charts/correlation_heatmap_20260303.png)
+> **왜 두 가지 방법인가?** Granger는 차분 기준 시간적 인과성,
+> Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
+> 양방법 합의 = 강한 증거 / 불일치 = 구조 변화 경고 신호.
 
 ## 3. 얼마나 확신할 수 있는가?
 
 > **핵심 발견**: LASSO·Random Forest·Rolling OLS 세 방법이 공통으로 지목한 Factor는
-> **UMCSENT, DGS10, PPIACO, DCOILWTICO, M2SL, DGS2, VIXCLS, RETAILSMNSA, DEXUSEU, HOUST, UNRATE, PAYEMS**입니다. 단일 방법 의존보다 신뢰도가 높습니다.
+> **HOUST, DEXUSEU, PPIACO, DCOILWTICO, VIXCLS, PAYEMS, DGS10, UNRATE, M2SL, DGS2, RETAILSMNSA, UMCSENT**입니다. 단일 방법 의존보다 신뢰도가 높습니다.
 
 ### LASSO + ML 교차검증
 
@@ -91,11 +92,11 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 
 ### 시나리오별 대응 프레임
 
-| 시나리오 | 신호 조건 | 핵심 모니터링 Factor | 대응 권고 |
+| 시나리오 | 신호 조건 | 핵심 모니터링 Factor(주기) | 대응 권고 |
 | --- | --- | --- | --- |
-| **Expansion** | 선행 Factor 계속 상승 | UMCSENT, DGS10, PPIACO | 현 포지션 유지, 레짐 전환 모니터링 |
-| **Neutral** | 혼조 — 방향성 불확실 | UMCSENT, DGS10, PPIACO | 분기 1회 Factor Pool 재평가 |
-| **Contraction** | 선행 Factor 하락 전환 | UMCSENT, DGS10, PPIACO | 조기 경보 발동, 리스크 재검토 |
+| **Expansion** | 선행 Factor 지속 상승 | PPI MoM%(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 현 포지션 유지, 레짐 전환 신호 모니터링 |
+| **Neutral** | 혼조 — 방향성 불확실 | PPI MoM%(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 분기 1회 Factor Pool 전체 재평가 |
+| **Contraction** | 선행 Factor 하락 전환 | PPI MoM%(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 조기 경보 발동, 클라이언트 리스크 재검토 |
 
 ### 모니터링 우선순위
 
