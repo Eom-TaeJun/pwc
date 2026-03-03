@@ -1,5 +1,6 @@
 """Factor 분석 패키지 — 오케스트레이터."""
-import json, os
+import json
+import os
 from datetime import datetime
 
 from .io import load_latest_factors, build_dataframe

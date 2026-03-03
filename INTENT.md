@@ -63,11 +63,13 @@ pwc-lead (조율·품질 검토)
     → FRED API: 20개 거시경제 시리즈
     → outputs/context/factors_YYYYMMDD.json
 
-분석 (analyze.py)  --correlate / --importance
+분석 (src/analyze/)  --correlate / --importance
     → 상관관계 행렬 (Pearson, lag=1~6M)
     → LASSO 선별 (alpha 교차검증)
     → Rolling OLS 안정성 (36M 창)
     → RF Feature Importance
+    → GMM 3-State 레짐 탐지
+    → Granger 인과관계 검증
 
 리포트 (report.py)  --report
     → outputs/reports/factor_report_YYYYMMDD.md

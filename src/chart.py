@@ -9,7 +9,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from sklearn.linear_model import lasso_path
-import json, os, glob
+import json
+import os
+import glob
 import numpy as np
 import pandas as pd
 from datetime import datetime

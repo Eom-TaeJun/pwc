@@ -150,7 +150,6 @@ ADF 정상성 변환 후 F-test. STRONG: p<0.01 / MODERATE: p<0.05 / WEAK: p<0.1
 
     # --- Section 6: 컨설팅 함의 ---
     ci = analysis.get("consulting_implications", {})
-    reg_label_s6 = analysis.get("regime", {}).get("regime", "N/A")
     s6 = f"""## 6. 컨설팅 함의
 
 ### 현재 레짐 판단

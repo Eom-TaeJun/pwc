@@ -1,5 +1,7 @@
 """데이터 로딩 + DataFrame 빌드."""
-import json, os, glob
+import json
+import os
+import glob
 import pandas as pd
 
 OUTPUT_DIR = "outputs/context"
