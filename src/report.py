@@ -23,6 +23,14 @@ from src.config import (
 
 OUTPUT_DIR = "outputs/reports"
 
+# 레짐 레이블 — 내부 GMM 분류명 → 보고서 표시명
+# GMM은 INDPRO MoM% 변동성 기준으로 분류하므로 NBER 경기국면과 직접 대응 안 함
+_REGIME_DISPLAY = {
+    "Expansion":  "고모멘텀",    # MoM% 성장률이 장기 평균 대비 크게 높은 구간
+    "Neutral":    "안정성장",    # 장기 평균 근방의 정상 성장 구간 (전체 86%)
+    "Contraction": "저모멘텀",   # MoM% 성장률이 크게 낮거나 음수인 구간
+}
+
 
 def _load_latest(prefix: str) -> dict:
     files = sorted(glob.glob(f"outputs/context/{prefix}_*.json"))
@@ -139,6 +147,8 @@ def build_factor_report(
 
     # 동적 제목
     title = _dynamic_title(analysis)
+    # 보고서용 레짐 표시명 (내부 영문 레이블 → 한글 표시명)
+    reg_display = _REGIME_DISPLAY.get(reg_label, reg_label)
 
     # 양방법 합의 Factor
     granger_ids = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
@@ -155,7 +165,7 @@ def build_factor_report(
 
 | 항목 | 내용 |
 |------|------|
-| **현재 레짐** | **{reg_label}** (신뢰도 {reg_conf}%) |
+| **현재 레짐** | **{reg_display}** ({reg_label}, 신뢰도 {reg_conf}%) |
 | 레짐 확률 분포 | {prob_str} |
 | 핵심 선행지표 | {ci.get('leading_indicators', top_factors)} |
 | 분석 기간 | {period.get('start', 'N/A')} ~ {period.get('end', 'N/A')} ({period.get('n_obs', 'N/A')}개월) |
@@ -166,20 +176,23 @@ def build_factor_report(
     # ── Section 1: 지금 어디에 있는가? ────────────────────────────
     s1 = f"""## 1. 지금 어디에 있는가?
 
-> **핵심 발견**: 미국 산업생산(INDPRO)은 현재 **{reg_label}** 국면에 있으며,
+> **핵심 발견**: 미국 산업생산(INDPRO)은 현재 **{reg_display}** 국면에 있으며,
 > Shannon Entropy {reg_entropy:.3f}로 {'레짐 전환 가능성이 낮은 안정적 상태' if reg_entropy < 0.8 else '복수 국면 혼재 — 불확실성 높음'}입니다.
 
 GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별한 현재 레짐:
 
+> ※ 레짐은 INDPRO MoM% **성장률 변동성** 기준으로 분류합니다. NBER 경기확장·침체와 직접 대응하지 않습니다.
+> 고모멘텀(MoM% 장기 평균 대비 +1σ 이상) / 안정성장(정상 범위) / 저모멘텀(−1σ 이하 또는 음수)
+
 | 지표 | 값 | 해석 |
 |------|----|------|
-| **레짐** | {reg_label} | {'확장 국면' if reg_label == 'Expansion' else '수축 국면' if reg_label == 'Contraction' else '중립 국면'} |
-| 신뢰도 | {reg_conf}% | Shannon Entropy {reg_entropy:.3f} |
+| **레짐** | **{reg_display}** ({reg_label}) | GMM 사후확률 최댓값 기준 |
+| 신뢰도 | {reg_conf}% | Shannon Entropy {reg_entropy:.3f} (GMM 사후확률 기반) |
 | 레짐 확률 | {prob_str} | {'단일 레짐 우세' if reg_conf > 60 else '복수 레짐 경합'} |
 
 {ci.get('current_regime', '')}
 
-> **⚠ 해석 주의**: 신뢰도 {reg_conf}%는 "현재 시점을 {reg_label}로 분류할 확률"이며,
+> **⚠ 해석 주의**: 신뢰도 {reg_conf}%는 "현재 데이터점이 {reg_display}({reg_label}) 클러스터에 속할 GMM 사후확률"이며,
 > 레짐 분류의 절대적 정확성을 보장하지 않습니다.
 > GMM 모델은 **구조 변화 구간(2008~2009 금융위기, 2020 팬데믹)에서 신뢰도가 저하**됩니다.
 > 해당 기간 데이터가 포함된 전체 추정 결과이므로 최근 구간(2020 이후) 별도 검증을 권고합니다.
@@ -238,7 +251,7 @@ GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별�
     elif granger_ids:
         # Granger만 존재할 때는 Granger 결과 표시
         g_rows = [
-            [r["label"], f"+{r['optimal_lag']}개월", r["strength"], f"{r['p_value']:.4f}", "Granger만"]
+            [r["label"], f"+{r['optimal_lag']}개월", r["strength"], ("< 0.0001" if r["p_value"] < 0.0001 else f"{r['p_value']:.4f}"), "Granger만"]
             for r in granger if r["strength"] in ("STRONG", "MODERATE")
         ][:6]
         if g_rows:
@@ -311,7 +324,7 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
     # ── Section 4: 무엇을 해야 하는가? ────────────────────────────
     s4 = f"""## 4. 무엇을 해야 하는가?
 
-> **핵심 발견**: 현재 **{reg_label}** 국면에서 선행지표가 보내는 신호에 따라
+> **핵심 발견**: 현재 **{reg_display}({reg_label})** 국면에서 선행지표가 보내는 신호에 따라
 > 세 가지 시나리오로 대응 체계를 분리합니다.
 
 ### 시나리오별 대응 프레임
@@ -364,9 +377,12 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
         [r["factor"], r["label"], f"{r['corr']:.3f}", f"{r['pvalue']:.4f}", r["lag_months"]]
         for r in corr
     ]
-    # Granger 전체
+    # Granger 전체 — p-value: 0.0001 미만은 "< 0.0001" 표시 (과소 p-value 오해 방지)
+    def _fmt_pval(p: float) -> str:
+        return "< 0.0001" if p < 0.0001 else f"{p:.4f}"
+
     granger_rows_full = [
-        [r["factor"], r["label"], r["strength"], r["optimal_lag"], f"{r['p_value']:.4f}"]
+        [r["factor"], r["label"], r["strength"], r["optimal_lag"], _fmt_pval(r["p_value"])]
         for r in granger
     ]
 
