@@ -1,0 +1,30 @@
+{
+  "ticker": "006400.KS",
+  "event": {
+    "date": "2022-05-24",
+    "label": "Samsung SDI + Stellantis StarPlus Energy JV ($2.5B, 인디애나 기가팩토리)"
+  },
+  "data_period": {
+    "start": "2019-02",
+    "end": "2026-03",
+    "n_obs": 86
+  },
+  "pelt_breaks": [],
+  "event_proximity_months": null,
+  "before_event": {
+    "n": 40,
+    "start": "2019-02",
+    "end": "2022-05",
+    "mean_mom_pct": 2.902,
+    "std_mom_pct": 10.221,
+    "sharpe_monthly": 0.284
+  },
+  "after_event": {
+    "n": 47,
+    "start": "2022-05",
+    "end": "2026-03",
+    "mean_mom_pct": 0.279,
+    "std_mom_pct": 16.069,
+    "sharpe_monthly": 0.017
+  }
+}

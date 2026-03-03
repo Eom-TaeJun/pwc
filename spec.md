@@ -65,6 +65,14 @@ JD 핵심 역량(`ML 기반 Factor Pool 구축`, `선행지표 발굴`)을 실�
 - **왜**: 구조 변화(금융위기, 팬데믹) 구간에서 Factor ↔ INDPRO 관계가 역전될 수 있음. 정적 OLS로는 탐지 불가 → 롤링으로 계수 시계열 확인.
 - **안정 기준**: |std/mean| < 0.5 (변동계수 50% 이하 = 안정 Factor)
 
+### 구조 변화 기반 사이클 분석 (ruptures PELT)
+- **왜**: 고정 캘린더 창("최근 60개월")은 경제적으로 의미 없는 임의 기간. ZLB 진입·탈출, 금리 인상 사이클 시작 등 실질 구조 변화 시점을 데이터에서 자동 탐지해야 함.
+- **방법**: ruptures PELT(Pruned Exact Linear Time), rbf 커널 — 비모수적 분포 변화(수준·분산·자기상관) 동시 탐지.
+- **Paper**: Truong, Oudre & Vayatis (2020) "Selective review of offline change point detection methods," *Signal Processing*. arXiv:1801.00826.
+- **파라미터**: penalty=15.0 (높을수록 break 수 감소, 2~4개 기대), min_size=24개월
+- **폴백**: ruptures 미설치 시 최근 60개월 고정 창 사용
+- **개별기업 적용**: 동일 원리 — 협업 발표·사업 모델 전환 이벤트 전후 세그먼트 분리 가능 (ruptures multivariate input 지원)
+
 ### Random Forest Feature Importance
 - **왜**: LASSO는 선형 관계만 포착. RF는 비선형 상호작용 중요도 → 두 방법 모두 상위에 오른 Factor = 강한 선행지표.
 
@@ -84,6 +92,7 @@ JD 핵심 역량(`ML 기반 Factor Pool 구축`, `선행지표 발굴`)을 실�
 | 4 | 무엇을 해야 하는가? | 시나리오 3개 + 권고 |
 | 부록 A | 방법론 | 파라미터 전체 |
 | 부록 B | 전체 데이터 테이블 | LASSO·상관관계·Granger 원본 |
+| 부록 C | 현재 사이클 집중 분석 | PELT 기반 기간 분할 + 장기 vs 현재 Factor 비교 |
 
 **설계 원칙**: Story-first (결론 → 근거) / 방법론은 부록 / 섹션별 "핵심 발견" callout
 

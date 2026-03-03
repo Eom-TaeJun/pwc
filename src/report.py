@@ -19,6 +19,11 @@ from src.config import (
     RF_RANDOM_STATE,
     ROLLING_STABILITY_THRESHOLD,
     ROLLING_WINDOW,
+    SHORT_PERIOD_MONTHS,
+    SHORT_ROLLING_WINDOW,
+    SHORT_GRANGER_MAX_LAG,
+    BREAK_PENALTY,
+    BREAK_MIN_SIZE,
 )
 
 OUTPUT_DIR = "outputs/reports"
@@ -118,6 +123,100 @@ def _scenario_table(reg_label: str, granger: list, lead_lag: list,
         ["**Contraction**", "선행 Factor 하락 전환", watch_detail, "조기 경보 발동, 클라이언트 리스크 재검토"],
     ]
     return _fmt_table(rows, ["시나리오", "신호 조건", "핵심 모니터링 Factor(주기)", "대응 권고"])
+
+
+def _short_period_section(analysis: dict) -> str:
+    """부록 C: 현재 사이클 집중 분석 — PELT 구조 변화 기반 기간 분할."""
+    sp = analysis.get("short_period_analysis", {})
+    if not sp:
+        return ""
+
+    sp_period  = sp.get("data_period", {})
+    sp_lasso   = sp.get("lasso_selected", [])
+    sp_granger = sp.get("granger_leading", [])
+    sp_rs      = sp.get("rolling_stability", {})
+    sp_corr    = sp.get("correlation", [])
+    method   = sp.get("method", "ruptures_pelt")
+    all_segs = sp.get("all_segments", [])
+
+    # 방법론 레이블
+    if method == "ruptures_pelt":
+        method_note = f"ruptures PELT (rbf), pen={BREAK_PENALTY}, min_size={BREAK_MIN_SIZE}개월"
+    else:
+        method_note = f"fallback: 최근 {SHORT_PERIOD_MONTHS}개월 (ruptures 미설치)"
+
+    # 장기 기준 Factor 집합
+    long_lasso_ids  = {r["factor"] for r in analysis.get("lasso_selected", [])}
+    long_g_ids      = {r["factor"] for r in analysis.get("granger_leading", [])}
+    short_lasso_ids = {r["factor"] for r in sp_lasso}
+    short_g_ids     = {r["factor"] for r in sp_granger}
+
+    label_map = {r["factor"]: r["label"] for r in sp_corr}
+    for r in sp_lasso:
+        label_map.setdefault(r["factor"], r.get("label", r["factor"]))
+
+    def _labels(ids: set) -> str:
+        return ", ".join(label_map.get(f, f) for f in ids) or "없음"
+
+    rows_g = [
+        ["지속 선행 (양기간 공통)", _labels(long_g_ids & short_g_ids), "구조적 선행 — 높은 신뢰도"],
+        ["현 사이클 부상", _labels(short_g_ids - long_g_ids), "현 사이클 특이 요인 — 추적 강화"],
+        ["현 사이클 약화", _labels(long_g_ids - short_g_ids), "관계 소멸 가능 — 재검증 필요"],
+    ]
+    rows_l = [
+        ["지속 선별 (양기간 공통)", _labels(long_lasso_ids & short_lasso_ids), "장단기 모두 유효"],
+        ["현 사이클 부상", _labels(short_lasso_ids - long_lasso_ids), "현 사이클 특이 요인"],
+        ["현 사이클 약화", _labels(long_lasso_ids - short_lasso_ids), "역할 약화 — 모니터링 축소 검토"],
+    ]
+
+    sp_stable   = ", ".join(sp_rs.get("stable_factors", [])) or "없음"
+    sp_unstable = ", ".join(sp_rs.get("unstable_factors", [])) or "없음"
+
+    # 구조 변화 타임라인 (세그먼트 2개 이상일 때만)
+    seg_timeline = ""
+    if len(all_segs) > 1:
+        seg_rows = [
+            [s["segment"], s["start"][:7], s["end"][:7], s["n_obs"],
+             "← **현재 사이클**" if i == len(all_segs) - 1 else ""]
+            for i, s in enumerate(all_segs)
+        ]
+        seg_timeline = (
+            "### C-0. PELT 감지 구조 변화 타임라인\n\n"
+            + _fmt_table(seg_rows, ["세그먼트", "시작", "종료", "관측수(월)", "비고"])
+            + "\n\n> **세그먼트 해석**: PELT(rbf)가 INDPRO MoM% 분포(수준·분산·자기상관) 변화를\n"
+            "> 기준으로 기간을 분리합니다. 각 세그먼트 경계가 단순 캘린더 기간보다\n"
+            "> 경제 구조 변화(ZLB 진입·탈출, 금리 인상 사이클 등)와 가깝습니다.\n\n"
+        )
+
+    return f"""## 부록 C: 현재 사이클 집중 분석
+
+> **분석 기간**: {sp_period.get('start', 'N/A')[:7]} ~ {sp_period.get('end', 'N/A')[:7]} ({sp_period.get('n_obs', 'N/A')}개월)
+> **방법**: {method_note}
+> Granger maxlag={SHORT_GRANGER_MAX_LAG}, Rolling 창={SHORT_ROLLING_WINDOW}개월.
+>
+> 고정 캘린더 창(예: "최근 60개월") 대신 **PELT 구조 변화 탐지로 정의된 현재 사이클 세그먼트**를 분석합니다.
+> 개별 기업 분석 시에도 동일한 원리 적용: 협업 발표·사업 모델 전환 이벤트 전후로 세그먼트를 분리합니다.
+
+{seg_timeline}### C-1. Granger 선행성 — 장기 vs 현재 사이클 비교
+
+{_fmt_table(rows_g, ["구분", "Factor(지표명)", "컨설팅 함의"])}
+
+### C-2. LASSO 선별 — 장기 vs 현재 사이클 비교
+
+{_fmt_table(rows_l, ["구분", "Factor(지표명)", "컨설팅 함의"])}
+
+### C-3. 현재 사이클 Rolling OLS 안정성 ({SHORT_ROLLING_WINDOW}개월 창)
+
+| 구분 | Factor |
+|------|--------|
+| **안정** | {sp_stable} |
+| **불안정** | {sp_unstable} |
+
+> **해석 지침**: 장기에서 안정 → 현재 사이클에서 불안정으로 전환된 Factor는
+> 구조 변화의 전형적 신호입니다. 현재 사이클에서 새로 안정화된 Factor가
+> 이번 사이클의 실질 선행지표 후보입니다.
+
+"""
 
 
 def build_factor_report(
@@ -431,6 +530,9 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
     else:
         s_appx_b += "_데이터 없음_\n"
 
+    # ── 부록 C: 단기 집중 분석 ──────────────────────────────────────
+    s_appx_c = _short_period_section(analysis)
+
     # ── 최종 조합 ──────────────────────────────────────────────────
     report = f"""# {title}
 
@@ -446,7 +548,8 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 ---
 
 {s_appx_a}
-{s_appx_b}"""
+{s_appx_b}
+{s_appx_c}"""
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     path = f"{OUTPUT_DIR}/factor_pool_{date_str}.md"

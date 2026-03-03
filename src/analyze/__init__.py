@@ -11,6 +11,10 @@ from .importance import run_importance
 from .regime import run_regime
 from .granger import run_granger
 from .lead_lag import run_lead_lag
+from .break_detect import detect_breaks
+from .period import run_period_analysis
+
+from src.config import RATE_HIGH_ERA_START, RATE_HIGH_ERA_END, RATE_CUT_ERA_START
 
 OUTPUT_DIR = "outputs/context"
 
@@ -56,6 +60,33 @@ def analyze(factors_data: dict = None) -> dict:
         [r["factor"] for r in lasso if "UMCSENT" in r["factor"]]
     )
 
+    # ── 현재 사이클 분석 (PELT 기반) ────────────────────────────────
+    breaks = detect_breaks(y)
+    current_seg = breaks[-1]
+    current_period = run_period_analysis(
+        X, y, factors_data,
+        start=current_seg["start"], end=current_seg["end"],
+        label="현재 사이클 (PELT 감지)",
+    )
+    # short_period_analysis 하위 호환 필드 유지
+    sp_lasso          = [{"factor": r["factor"], "label": r.get("label", r["factor"]),
+                          "coefficient": r.get("coefficient", 0)}
+                         for r in current_period.get("lasso_selected", [])]
+    sp_granger_leading = current_period.get("granger_leading", [])
+    sp_corr            = current_period.get("correlation", [])
+
+    # ── 통화정책 사이클별 분석 ────────────────────────────────────────
+    rate_high = run_period_analysis(
+        X, y, factors_data,
+        start=RATE_HIGH_ERA_START, end=RATE_HIGH_ERA_END,
+        label="포스트코로나 고금리기 (2020-03 ~ 2024-09)",
+    )
+    rate_cut = run_period_analysis(
+        X, y, factors_data,
+        start=RATE_CUT_ERA_START,
+        label="금리 인하기 (2024-09 ~ 현재)",
+    )
+
     result = {
         "analyzed_at": datetime.now().isoformat(),
         "target": factors_data["target"]["series"],
@@ -71,6 +102,20 @@ def analyze(factors_data: dict = None) -> dict:
         "lead_lag": lead_lag,
         "rolling_stability": rolling,
         "importance": importance,
+        "short_period_analysis": {
+            "method": "fallback_fixed" if current_seg.get("fallback") else "ruptures_pelt",
+            "all_segments": breaks,
+            "current_segment": current_seg,
+            **{k: v for k, v in current_period.items()
+               if k not in ("label",)},
+            "lasso_selected": sp_lasso,
+            "granger_leading": sp_granger_leading,
+            "correlation": sp_corr,
+        },
+        "policy_period_analysis": {
+            "rate_high_era": rate_high,
+            "rate_cut_era": rate_cut,
+        },
         "consulting_implications": {
             "current_regime": f"{reg_str} (신뢰도 {reg_conf}%)",
             "leading_indicators": (
