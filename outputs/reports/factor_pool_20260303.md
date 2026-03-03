@@ -1,4 +1,4 @@
-# 산업생산 Neutral 국면: Fed Funds Rate가 -11개월 앞서 신호를 보낸다
+# 산업생산 Neutral 국면: Fed Funds Rate Granger 검증상 6개월 선행
 
 **생성일**: 2026-03-03 | **Target**: 산업생산지수 MoM% | **출처**: FRED
 
@@ -32,10 +32,19 @@ GMM 3-state 모델이 309개월 데이터에서 식별한 현재 레짐:
 
 Neutral (신뢰도 99.9%)
 
+> **⚠ 해석 주의**: 신뢰도 99.9%는 "현재 시점을 Neutral로 분류할 확률"이며,
+> 레짐 분류의 절대적 정확성을 보장하지 않습니다.
+> GMM 모델은 **구조 변화 구간(2008~2009 금융위기, 2020 팬데믹)에서 신뢰도가 저하**됩니다.
+> 해당 기간 데이터가 포함된 전체 추정 결과이므로 최근 구간(2020 이후) 별도 검증을 권고합니다.
+
+![레짐 타임라인](outputs/charts/regime_timeline_20260303.png)
+
 
 ## 2. 무엇이 먼저 움직이는가?
 
 > **핵심 발견**: Granger 검증에서 **12개 Factor**의 선행성이 확인되었으나, Cross-correlation과의 양방법 합의는 없습니다. 두 방법의 불일치는 최근 통화정책 효과 약화 등 **구조 변화 가능성**을 시사합니다 — 분기별 재검증이 필요합니다.
+
+![The Signal — 선행지표 vs INDPRO](outputs/charts/signal_chart_20260303.png)
 
 | 지표명 | 최적 Lag | 강도 | p-value | 검증 방법 |
 | --- | --- | --- | --- | --- |
@@ -50,10 +59,12 @@ Neutral (신뢰도 99.9%)
 > Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
 > 양방법 합의 = 강한 증거 / 불일치 = 구조 변화 경고 신호.
 
+![Factor 상관관계 히트맵](outputs/charts/correlation_heatmap_20260303.png)
+
 ## 3. 얼마나 확신할 수 있는가?
 
 > **핵심 발견**: LASSO·Random Forest·Rolling OLS 세 방법이 공통으로 지목한 Factor는
-> **HOUST, DEXUSEU, PPIACO, DCOILWTICO, VIXCLS, PAYEMS, DGS10, UNRATE, M2SL, DGS2, RETAILSMNSA, UMCSENT**입니다. 단일 방법 의존보다 신뢰도가 높습니다.
+> **PAYEMS, HOUST, VIXCLS, DCOILWTICO, M2SL, DGS2, DGS10, UNRATE, RETAILSMNSA, DEXUSEU, PPIACO, UMCSENT**입니다. 단일 방법 의존보다 신뢰도가 높습니다.
 
 ### LASSO + ML 교차검증
 
@@ -94,9 +105,9 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 
 | 시나리오 | 신호 조건 | 핵심 모니터링 Factor(주기) | 대응 권고 |
 | --- | --- | --- | --- |
-| **Expansion** | 선행 Factor 지속 상승 | PPI MoM%(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 현 포지션 유지, 레짐 전환 신호 모니터링 |
-| **Neutral** | 혼조 — 방향성 불확실 | PPI MoM%(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 분기 1회 Factor Pool 전체 재평가 |
-| **Contraction** | 선행 Factor 하락 전환 | PPI MoM%(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 조기 경보 발동, 클라이언트 리스크 재검토 |
+| **Expansion** | 선행 Factor 지속 상승 | 비농업고용 MoM 증감(천명)(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 현 포지션 유지, 레짐 전환 신호 모니터링 |
+| **Neutral** | 혼조 — 방향성 불확실 | 비농업고용 MoM 증감(천명)(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 분기 1회 Factor Pool 전체 재평가 |
+| **Contraction** | 선행 Factor 하락 전환 | 비농업고용 MoM 증감(천명)(매월) / WTI 유가 MoM%(매월) / VIX 변동성지수(매월) | 조기 경보 발동, 클라이언트 리스크 재검토 |
 
 ### 모니터링 우선순위
 
@@ -117,7 +128,7 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | 단계 | 방법 | 파라미터 | 목적 |
 |------|------|---------|------|
 | 레짐 분류 | GMM 3-state | n_components=3 | 거시 국면 구분 |
-| Factor 선별 | LASSO (LassoCV) | CV Folds=5 | 희소 선형 선별 |
+| Factor 선별 | LASSO (LassoCV) | CV Folds=5, α=0.020252 | 희소 선형 선별 |
 | 상관관계 | Pearson (시차별) | lag=0·3·6·12개월 | 동시적·지연 상관 |
 | 선행성 검증 | Granger F-test | ADF 정상화, maxlag=12 | 시간적 인과성 |
 | 선행성 교차검증 | Cross-correlation | MoM% 변환, ±12개월 | Granger 결과 보완 |
@@ -125,6 +136,10 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | 안정성 | Rolling OLS | window=36개월 | 계수 불안정 탐지 |
 
 **Granger 강도 기준**: STRONG p<0.01 / MODERATE p<0.05 / WEAK p<0.1
+
+**⚠ Vintage 데이터 주의**: FRED 데이터는 발표 후 수정(revision)이 반영된 역사적 값입니다.
+실시간 예측 시스템에서는 발표 당시 원본값(real-time vintage)과 차이가 발생할 수 있으며,
+이 분석의 Granger 인과관계는 **역사적 수정값 기준**임을 명기합니다.
 
 
 ## 부록 B: 전체 데이터 테이블

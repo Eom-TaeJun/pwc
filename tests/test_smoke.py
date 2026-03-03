@@ -52,9 +52,12 @@ def test_lasso(mock_Xy, mock_factors_data):
     from src.analyze.lasso import run_lasso
     X, y = mock_Xy
     result = run_lasso(X, y, mock_factors_data)
-    assert isinstance(result, list)
-    if result:
-        assert "factor" in result[0] and "coefficient" in result[0]
+    assert isinstance(result, dict)
+    assert "selected" in result and "alpha" in result
+    assert isinstance(result["selected"], list)
+    assert isinstance(result["alpha"], float)
+    if result["selected"]:
+        assert "factor" in result["selected"][0] and "coefficient" in result["selected"][0]
 
 
 def test_correlation(mock_Xy, mock_factors_data):

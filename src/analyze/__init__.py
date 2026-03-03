@@ -28,9 +28,11 @@ def analyze(factors_data: dict = None) -> dict:
         factors_data = load_latest_factors()
 
     X, y = build_dataframe(factors_data)
-    lasso      = run_lasso(X, y, factors_data)
-    corr       = run_correlation(X, y, factors_data)
-    rolling    = run_rolling_ols(X, y, lasso)
+    lasso_result = run_lasso(X, y, factors_data)
+    lasso        = lasso_result["selected"]
+    lasso_alpha  = lasso_result["alpha"]
+    corr         = run_correlation(X, y, factors_data)
+    rolling      = run_rolling_ols(X, y, lasso)
     importance = run_importance(X, y, lasso, factors_data)
     regime     = run_regime(y)
     granger    = run_granger(X, y, factors_data)
@@ -55,6 +57,7 @@ def analyze(factors_data: dict = None) -> dict:
         },
         "regime": regime,
         "lasso_selected": lasso,
+        "lasso_alpha": lasso_alpha,
         "correlation": corr,
         "granger": granger,
         "lead_lag": lead_lag,

@@ -56,20 +56,17 @@ def _dynamic_title(analysis: dict) -> str:
     consensus = granger_ids & lead_ids
     if consensus:
         fid = next(iter(consensus))
-        candidates = [r for r in lead_lag if r["factor"] == fid]
-        top = candidates[0] if candidates else leading[0] if leading else None
+        ll_top = next((r for r in lead_lag if r["factor"] == fid), None)
+        label = ll_top["label"] if ll_top else fid
+        lag = ll_top["optimal_lag"] if ll_top else "N/A"
+        return f"산업생산 {regime} 국면: {label}가 {lag}개월 앞서 신호를 보낸다"
     elif leading:
         top = leading[0]
+        return f"산업생산 {regime} 국면: {top['label']}가 {top['optimal_lag']}개월 앞서 신호를 보낸다"
     elif granger_strong:
-        top = granger_strong[0]
-        top = next((r for r in lead_lag if r["factor"] == top["factor"]), None)
-    else:
-        top = None
-
-    if top:
-        label = top["label"]
-        lag = top.get("optimal_lag", "N/A")
-        return f"산업생산 {regime} 국면: {label}가 {lag}개월 앞서 신호를 보낸다"
+        # Granger만 유의 → Granger 자체 optimal_lag 사용 (lead_lag으로 덮어쓰지 않음)
+        g = granger_strong[0]
+        return f"산업생산 {regime} 국면: {g['label']} Granger 검증상 {g['optimal_lag']}개월 선행"
     return f"산업생산 {regime} 국면 진단 — Factor Pool 선행지표 분석"
 
 
@@ -132,6 +129,7 @@ def build_factor_report(
     granger = analysis.get("granger", [])
     lead_lag = analysis.get("lead_lag", [])
     lasso = analysis.get("lasso_selected", [])
+    lasso_alpha = analysis.get("lasso_alpha", "CV 자동 선택")
     imp = analysis.get("importance", [])
     corr = analysis.get("correlation", [])
     rs = analysis.get("rolling_stability", {})
@@ -180,6 +178,11 @@ GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별�
 | 레짐 확률 | {prob_str} | {'단일 레짐 우세' if reg_conf > 60 else '복수 레짐 경합'} |
 
 {ci.get('current_regime', '')}
+
+> **⚠ 해석 주의**: 신뢰도 {reg_conf}%는 "현재 시점을 {reg_label}로 분류할 확률"이며,
+> 레짐 분류의 절대적 정확성을 보장하지 않습니다.
+> GMM 모델은 **구조 변화 구간(2008~2009 금융위기, 2020 팬데믹)에서 신뢰도가 저하**됩니다.
+> 해당 기간 데이터가 포함된 전체 추정 결과이므로 최근 구간(2020 이후) 별도 검증을 권고합니다.
 
 """
     if chart_paths.get("regime_timeline"):
@@ -335,7 +338,7 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | 단계 | 방법 | 파라미터 | 목적 |
 |------|------|---------|------|
 | 레짐 분류 | GMM 3-state | n_components=3 | 거시 국면 구분 |
-| Factor 선별 | LASSO (LassoCV) | CV Folds={LASSO_CV_FOLDS} | 희소 선형 선별 |
+| Factor 선별 | LASSO (LassoCV) | CV Folds={LASSO_CV_FOLDS}, α={lasso_alpha} | 희소 선형 선별 |
 | 상관관계 | Pearson (시차별) | lag={corr_lag_str}개월 | 동시적·지연 상관 |
 | 선행성 검증 | Granger F-test | ADF 정상화, maxlag={LEAD_LAG_MAX_LAG} | 시간적 인과성 |
 | 선행성 교차검증 | Cross-correlation | MoM% 변환, ±{LEAD_LAG_MAX_LAG}개월 | Granger 결과 보완 |
@@ -343,6 +346,10 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | 안정성 | Rolling OLS | window={r_window}개월 | 계수 불안정 탐지 |
 
 **Granger 강도 기준**: STRONG p<{GRANGER_STRONG} / MODERATE p<{GRANGER_MODERATE} / WEAK p<{GRANGER_WEAK}
+
+**⚠ Vintage 데이터 주의**: FRED 데이터는 발표 후 수정(revision)이 반영된 역사적 값입니다.
+실시간 예측 시스템에서는 발표 당시 원본값(real-time vintage)과 차이가 발생할 수 있으며,
+이 분석의 Granger 인과관계는 **역사적 수정값 기준**임을 명기합니다.
 
 """
 
