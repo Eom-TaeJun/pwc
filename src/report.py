@@ -130,21 +130,70 @@ ADF 정상성 변환 후 F-test. STRONG: p<0.01 / MODERATE: p<0.05 / WEAK: p<0.1
 > Pearson 상관관계(섹션 3)는 동시적 연관성을, Granger는 **시간적 선행성**을 검증합니다.
 """
 
+    # --- Section 3.7: Lead-Lag 교차검증 ---
+    lead_lag = analysis.get("lead_lag", [])
+    leading = [r for r in lead_lag if r.get("is_leading")][:6]
+    ll_rows = [[r["factor"], r["label"],
+                f"+{r['optimal_lag']}m" if r["optimal_lag"] > 0 else str(r["optimal_lag"]),
+                f"{r['max_corr']:.3f}", "✓" if r["is_leading"] else ""]
+               for r in lead_lag[:8]]
+
+    # Granger와 합의 여부 확인
+    granger_factors = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
+    lead_factors = {r["factor"] for r in leading}
+    consensus = granger_factors & lead_factors
+    consensus_str = ", ".join(consensus) if consensus else "없음 (방법론 간 불일치 — 해석 주의)"
+
+    s37 = f"""## 3.7 Lead-Lag 교차검증
+
+Cross-correlation (lag -12~+12개월)으로 Granger 결과를 교차검증.
+**양방법 공통 선행 Factor = 강한 증거**, 불일치 = 구조 변화 또는 척도 차이 가능성.
+
+{_fmt_table(ll_rows, ["Factor", "지표명", "최적 Lag", "최대 상관계수", "선행?"])}
+
+| 검증 항목 | 결과 |
+|---------|------|
+| Granger STRONG/MODERATE | {", ".join(granger_factors) or "없음"} |
+| Lead-Lag 선행 Factor | {", ".join(lead_factors) or "없음"} |
+| **양방법 합의 (강한 증거)** | **{consensus_str}** |
+
+> Granger는 차분(정상화) 기준, Lead-Lag는 MoM% 변환 기준. 동일 방향이면 선행성 신뢰도 상승.
+"""
+
     # --- Section 5: Rolling 안정성 ---
     rs = analysis.get("rolling_stability", {})
-    stable = ", ".join(rs.get("stable_factors", [])) or "없음"
-    unstable = ", ".join(rs.get("unstable_factors", [])) or "없음"
+    stable_list = rs.get("stable_factors", [])
+    unstable_list = rs.get("unstable_factors", [])
+    stable = ", ".join(stable_list) or "없음"
+    unstable = ", ".join(unstable_list) or "없음"
+
+    # 불안정 Factor 컨설팅 해석
+    if unstable_list:
+        instability_note = f"""
+### 불안정 Factor 해석 (클라이언트 설명용)
+
+불안정({len(unstable_list)}개)은 **분석 실패가 아닙니다** — 경제 구조 변화(2008 금융위기, 2020 팬데믹)가 \
+빈번하다는 현실을 포착한 결과입니다.
+
+| 관점 | 내용 |
+|------|------|
+| 현재 구간 신뢰도 | 최근 36개월 기준 Granger·상관관계로 선행성 별도 검증 완료 |
+| 구조 변화 위험 | 팬데믹·금융위기급 외부 충격 시 계수 방향 역전 가능 |
+| 관리 권고 | 분기 1회 Factor Pool 재평가, 계수 방향 역전 시 조기 경보 |
+| 클라이언트 메시지 | "선행지표 관계는 고정값이 아닌 만큼 분기별 재검토 프로세스가 필요합니다." |
+"""
+    else:
+        instability_note = ""
+
     s5 = f"""## 5. Rolling OLS 안정성 검증 (36개월 창)
 
-계수의 시계열 안정성 판별 기준: |std/mean| < 0.5 → 안정, ≥ 0.5 → 불안정.
+계수 시계열 안정성 기준: |std/mean| < 0.5 → 안정, ≥ 0.5 → 불안정.
 
 | 구분 | Factor |
 |------|--------|
 | **안정 Factor** | {stable} |
 | **불안정 Factor** | {unstable} |
-
-> 불안정 Factor는 구조 변화(금융위기, 팬데믹) 구간에서 관계가 역전될 위험 있음.
-"""
+{instability_note}"""
     if chart_paths.get("rolling_coef"):
         s5 += f"\n![Rolling 계수 안정성]({chart_paths['rolling_coef']})\n"
 
@@ -181,6 +230,7 @@ ADF 정상성 변환 후 F-test. STRONG: p<0.01 / MODERATE: p<0.05 / WEAK: p<0.1
 {s2}
 {s3}
 {s35}
+{s37}
 {s4}
 {s5}
 {s6}"""

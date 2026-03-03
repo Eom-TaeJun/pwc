@@ -41,7 +41,11 @@ def analyze(factors_data: dict = None) -> dict:
     top_lag  = top_g["optimal_lag"] if top_g else 0
     reg_str  = regime.get("regime", "N/A")
     reg_conf = regime.get("confidence", 0)
-    survey   = [r["factor"] for r in corr if "UMCSENT" in r["factor"]]
+    # UMCSENT는 서베이 기반 — corr 또는 lasso 어디에든 포함되면 경고
+    survey   = (
+        [r["factor"] for r in corr if "UMCSENT" in r["factor"]] or
+        [r["factor"] for r in lasso if "UMCSENT" in r["factor"]]
+    )
 
     result = {
         "analyzed_at": datetime.now().isoformat(),

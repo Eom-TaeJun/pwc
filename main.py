@@ -57,32 +57,46 @@ def cmd_report():
     return path
 
 
+def cmd_export():
+    """최신 MD 보고서 → print-ready HTML 변환"""
+    print("[export] HTML 변환 중...")
+    from src.export import md_to_html
+    path = md_to_html()
+    print(f"  브라우저에서 열어 Ctrl+P → PDF 저장: {path}")
+    return path
+
+
 def cmd_all():
-    """전체 파이프라인: collect → analyze → chart → report"""
+    """전체 파이프라인: collect → analyze → chart → report → export"""
     print("=== pwc-factor 전체 파이프라인 시작 ===\n")
 
-    print("[1/4] FRED 데이터 수집...")
+    print("[1/5] FRED 데이터 수집...")
     from src.collect import collect
     factors_data = collect()
 
-    print("\n[2/4] Factor 분석 (LASSO + 상관관계 + Rolling + RF)...")
+    print("\n[2/5] Factor 분석 (LASSO + 상관관계 + Rolling + RF)...")
     from src.analyze import analyze
     analysis = analyze(factors_data)
 
-    print("\n[3/4] 차트 생성...")
+    print("\n[3/5] 차트 생성...")
     from src.chart import generate_all
     from src.analyze import build_dataframe
     X, y = build_dataframe(factors_data)
     charts = generate_all(analysis=analysis, X_df=X, y_series=y)
 
-    print("\n[4/4] 보고서 생성...")
+    print("\n[4/5] 보고서 생성...")
     from src.report import build_factor_report
     report_path = build_factor_report(factors_data, analysis, charts)
 
+    print("\n[5/5] HTML 변환...")
+    from src.export import md_to_html
+    html_path = md_to_html(report_path)
+
     print(f"\n=== 완료 ===")
-    print(f"  보고서: {report_path}")
-    print(f"  차트:   outputs/charts/")
-    print(f"  데이터: outputs/context/")
+    print(f"  보고서 (MD):   {report_path}")
+    print(f"  보고서 (HTML): {html_path}  ← 브라우저 열기 → Ctrl+P → PDF")
+    print(f"  차트:          outputs/charts/")
+    print(f"  데이터:        outputs/context/")
 
 
 def main():
@@ -93,6 +107,7 @@ def main():
     parser.add_argument("--correlate",  action="store_true", help="상관관계 분석")
     parser.add_argument("--importance", action="store_true", help="RF Feature Importance")
     parser.add_argument("--report",     action="store_true", help="보고서 생성")
+    parser.add_argument("--export",     action="store_true", help="MD → HTML 변환")
     parser.add_argument("--all",        action="store_true", help="전체 파이프라인")
     args = parser.parse_args()
 
@@ -111,6 +126,7 @@ def main():
         if args.correlate:  cmd_correlate()
         if args.importance: cmd_importance()
         if args.report:     cmd_report()
+        if args.export:     cmd_export()
 
 
 if __name__ == "__main__":
