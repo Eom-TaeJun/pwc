@@ -78,16 +78,23 @@ def _dynamic_title(analysis: dict) -> str:
     return f"산업생산 {regime} 국면 진단 — Factor Pool 선행지표 분석"
 
 
-def _scenario_table(reg_label: str, granger: list, lead_lag: list) -> str:
+def _scenario_table(reg_label: str, granger: list, lead_lag: list,
+                    granger_leading: list = None) -> str:
     """레짐별 3시나리오 + Factor별 최적 lag 반영한 모니터링 주기."""
-    granger_strong = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
-    leading = [r for r in lead_lag if r.get("is_leading")]
-    lead_ids = {r["factor"] for r in leading}
-    consensus = granger_strong & lead_ids
-    priority = consensus or granger_strong
+    gl = granger_leading or []
+    priority_ids = {r["factor"] for r in gl}
+    if not priority_ids:
+        # fallback: Granger STRONG/MODERATE
+        priority_ids = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
 
-    # 최적 lag 기반 모니터링 주기 계산 (lag ≤ 3개월 → 월간, 4~6개월 → 격월, 7개월+ → 분기)
-    lag_map = {r["factor"]: r["optimal_lag"] for r in lead_lag}
+    # Granger lag(양수, 선행 방향) 기반 모니터링 주기
+    # Cross-corr opt_lag는 음수(INDPRO가 먼저 움직이는 반응 방향)일 수 있어 사용 금지
+    lag_map = {r["factor"]: r["lag"] for r in gl}
+    if not lag_map:
+        # fallback: Granger에서 직접 추출
+        lag_map = {r["factor"]: r["optimal_lag"] for r in granger
+                   if r["strength"] in ("STRONG", "MODERATE")}
+
     def _freq(fid: str) -> str:
         lag = lag_map.get(fid, 99)
         if lag <= 3:
@@ -96,10 +103,9 @@ def _scenario_table(reg_label: str, granger: list, lead_lag: list) -> str:
             return "격월"
         return "분기"
 
-    if priority:
-        # 최상위 3개 + 주기 표시
-        top3 = list(priority)[:3]
-        label_map = {r["factor"]: r["label"] for r in lead_lag}
+    label_map = {r["factor"]: r["label"] for r in granger}
+    if priority_ids:
+        top3 = list(priority_ids)[:3]
         watch_detail = " / ".join(
             f"{label_map.get(f, f)}({_freq(f)})" for f in top3
         )
@@ -135,6 +141,7 @@ def build_factor_report(
     ci = analysis.get("consulting_implications", {})
 
     granger = analysis.get("granger", [])
+    granger_leading = analysis.get("granger_leading", [])
     lead_lag = analysis.get("lead_lag", [])
     lasso = analysis.get("lasso_selected", [])
     lasso_alpha = analysis.get("lasso_alpha", "CV 자동 선택")
@@ -202,26 +209,17 @@ GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별�
         s1 += f"![레짐 타임라인]({chart_paths['regime_timeline']})\n\n"
 
     # ── Section 2: 무엇이 먼저 움직이는가? ────────────────────────
-    # 상위 3 선행 Factor (양방법 합의 우선)
-    ordered_leading = sorted(
-        leading,
-        key=lambda r: (r["factor"] not in consensus, -abs(r["max_corr"])),
-    )[:6]
-    ll_rows = [
-        [
-            r["label"],
-            f"+{r['optimal_lag']}개월",
-            f"{r['max_corr']:.3f}",
-            "✓ 양방법 합의" if r["factor"] in consensus else "Lead-Lag",
-        ]
-        for r in ordered_leading
-    ]
+    # 선행지표 primary 소스: granger_leading (Granger STRONG/MODERATE)
+    # Cross-corr opt_lag는 음수(INDPRO→Factor 반응 방향)이므로 선행 판단에 사용 안 함
+    cc_lag_map = {r["factor"]: r["optimal_lag"] for r in lead_lag}  # 참고용 (음수 가능)
 
-    # 핵심 발견 문구 — 합의 0개일 때 불일치 원인을 명시해 "So what?" 답변 가능하게
-    if consensus:
+    if granger_leading:
+        top_gl = granger_leading[0]
         s2_finding = (
-            f"Granger 인과성과 Cross-correlation이 **동시에 확인한 선행지표 {len(consensus)}개**는 "
-            f"INDPRO 변곡점을 수개월 앞서 포착합니다."
+            f"**Granger 인과성 검증**에서 {top_gl['label']} 등 "
+            f"**{len(granger_leading)}개 Factor**가 INDPRO를 앞서 움직임을 확인했습니다. "
+            f"Cross-correlation 최적 Lag가 음수(−)로 나타나는 경우는 Granger 인과 방향(Factor→INDPRO)과 "
+            f"다른 방향, 즉 INDPRO 변화에 대한 정책·지표의 **반응 함수**를 포착한 피드백 루프입니다."
         )
     elif granger_ids:
         s2_finding = (
@@ -244,22 +242,35 @@ GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별�
     if chart_paths.get("signal_chart"):
         s2 += f"![The Signal — 선행지표 vs INDPRO]({chart_paths['signal_chart']})\n\n"
 
-    if ll_rows:
-        s2 += f"""{_fmt_table(ll_rows, ['지표명', '선행 기간', '상관계수', '검증 방법'])}
-
-"""
-    elif granger_ids:
-        # Granger만 존재할 때는 Granger 결과 표시
+    if granger_leading:
+        # 기본 표: Granger 선행지표 + Cross-corr Lag 병기 (피드백 루프 설명용)
         g_rows = [
-            [r["label"], f"+{r['optimal_lag']}개월", r["strength"], ("< 0.0001" if r["p_value"] < 0.0001 else f"{r['p_value']:.4f}"), "Granger만"]
+            [
+                r["label"],
+                f"+{r['lag']}개월",
+                r["strength"],
+                f"{cc_lag_map.get(r['factor'], 'N/A')}개월",
+            ]
+            for r in granger_leading[:6]
+        ]
+        s2 += _fmt_table(g_rows, ["지표명", "Granger 선행", "강도", "Cross-corr Lag"]) + "\n\n"
+        s2 += (
+            "> **Lag 해석**: Granger Lag(+)는 '해당 Factor → INDPRO' 선행 방향. "
+            "Cross-corr Lag(−)는 'INDPRO 변화 → 해당 Factor' 반응 방향. "
+            "부호가 반대인 경우 **피드백 루프**를 의미하며, 선행 관계 자체는 Granger 기준으로 판단합니다.\n\n"
+        )
+    elif granger_ids:
+        g_rows = [
+            [r["label"], f"+{r['optimal_lag']}개월", r["strength"],
+             ("< 0.0001" if r["p_value"] < 0.0001 else f"{r['p_value']:.4f}")]
             for r in granger if r["strength"] in ("STRONG", "MODERATE")
         ][:6]
         if g_rows:
-            s2 += _fmt_table(g_rows, ["지표명", "최적 Lag", "강도", "p-value", "검증 방법"]) + "\n\n"
+            s2 += _fmt_table(g_rows, ["지표명", "최적 Lag", "강도", "p-value"]) + "\n\n"
 
-    s2 += """> **왜 두 가지 방법인가?** Granger는 차분 기준 시간적 인과성,
-> Cross-correlation은 MoM% 변환 기준 최적 lag 탐색입니다.
-> 양방법 합의 = 강한 증거 / 불일치 = 구조 변화 경고 신호.
+    s2 += """> **방법론 노트**: Granger는 차분 기준 시간적 인과성(Factor→INDPRO),
+> Cross-correlation은 MoM% 변환 기준 최적 lag 탐색(양방향 탐색)입니다.
+> 두 방법이 **동일 방향**이면 강한 선행 증거 / **반대 부호**면 피드백 루프.
 """
     if chart_paths.get("correlation_heatmap"):
         s2 += f"\n![Factor 상관관계 히트맵]({chart_paths['correlation_heatmap']})\n"
@@ -329,7 +340,7 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 
 ### 시나리오별 대응 프레임
 
-{_scenario_table(reg_label, granger, lead_lag)}
+{_scenario_table(reg_label, granger, lead_lag, granger_leading)}
 
 ### 모니터링 우선순위
 

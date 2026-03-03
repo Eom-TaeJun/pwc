@@ -38,6 +38,13 @@ def analyze(factors_data: dict = None) -> dict:
     granger    = run_granger(X, y, factors_data)
     lead_lag   = run_lead_lag(X, y, factors_data)
 
+    # Granger STRONG/MODERATE → 실질 선행지표 목록 (Cross-correlation과 독립적으로 계산)
+    granger_leading = [
+        {"factor": g["factor"], "label": g["label"],
+         "lag": g["optimal_lag"], "strength": g["strength"]}
+        for g in granger if g["strength"] in ("STRONG", "MODERATE")
+    ]
+
     top_g    = granger[0] if granger else None
     top_fac  = top_g["factor"] if top_g else (corr[0]["factor"] if corr else "N/A")
     top_lag  = top_g["optimal_lag"] if top_g else 0
@@ -60,6 +67,7 @@ def analyze(factors_data: dict = None) -> dict:
         "lasso_alpha": lasso_alpha,
         "correlation": corr,
         "granger": granger,
+        "granger_leading": granger_leading,
         "lead_lag": lead_lag,
         "rolling_stability": rolling,
         "importance": importance,

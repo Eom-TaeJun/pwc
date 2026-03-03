@@ -8,6 +8,9 @@ from sklearn.preprocessing import StandardScaler
 def run_regime(y: pd.Series) -> dict:
     """Expansion / Neutral / Contraction 레짐 판별.
 
+    피처: winsorize(2-98%) + 12m_mean + 6m_mean
+    - 이전: MoM% + 12m_mean + 12m_std → 극값(2020 V자 반등)이 Expansion 독점 문제
+    - 개선: winsorize로 극값 완화 + std 제거 → 경제 사이클 균형적 포착
     신뢰도 = (1 - Shannon Entropy) * 100   — 0%: 완전 불확실, 100%: 완전 확실.
     """
     clean = y.dropna()
@@ -16,10 +19,13 @@ def run_regime(y: pd.Series) -> dict:
                 "confidence": 0, "regime_series": []}
 
     s = pd.Series(clean.values)
+    # winsorize: 극값 충격(2020 팬데믹 등)이 클러스터를 독점하지 않도록 2-98% 절단
+    lo, hi = float(s.quantile(0.02)), float(s.quantile(0.98))
+    s_w = s.clip(lo, hi)
     X = np.column_stack([
-        s.values,
-        s.rolling(12).mean().bfill().values,
-        s.rolling(12).std().bfill().values,
+        s_w.values,
+        s_w.rolling(12, min_periods=6).mean().bfill().values,
+        s_w.rolling(6, min_periods=3).mean().bfill().values,
     ])
     Xs = StandardScaler().fit_transform(X)
 
