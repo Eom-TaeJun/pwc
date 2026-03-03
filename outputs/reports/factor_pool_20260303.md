@@ -6,6 +6,20 @@
 
 ---
 
+## 0. Executive Summary
+
+| 항목 | 내용 |
+|------|------|
+| **현재 레짐** | **Neutral** |
+| 레짐 신뢰도 | 99.9% (Shannon Entropy: 0.001) |
+| 레짐 확률 분포 | Expansion: 0.0% | Neutral: 100.0% | Contraction: 0.0% |
+| 핵심 선행지표 | FEDFUNDS가 INDPRO 6개월 선행 (Granger STRONG) |
+| 클라이언트 권고 | 현재 산업생산 레짐: Neutral. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할 |
+
+![레짐 타임라인](outputs/charts/regime_timeline_20260303.png)
+
+![The Signal](outputs/charts/signal_chart_20260303.png)
+
 ## 1. 분석 개요
 
 | 항목 | 내용 |
@@ -56,6 +70,23 @@ LASSO 정규화(교차검증 5-Fold)로 12개 Factor 선별.
 
 ![상관관계 히트맵](outputs/charts/correlation_heatmap_20260303.png)
 
+## 3.5 Granger 인과관계 검증
+
+ADF 정상성 변환 후 F-test. STRONG: p<0.01 / MODERATE: p<0.05 / WEAK: p<0.10.
+
+| Factor | 지표명 | 강도 | 최적 Lag(월) | p-value |
+| --- | --- | --- | --- | --- |
+| FEDFUNDS | Fed Funds Rate | STRONG | 6 | 0.0000 |
+| UNRATE | 실업률 | STRONG | 7 | 0.0000 |
+| PAYEMS | 비농업고용 MoM 증감(천명) | STRONG | 11 | 0.0000 |
+| M2SL | M2 통화량 MoM% | STRONG | 5 | 0.0000 |
+| DCOILWTICO | WTI 유가 MoM% | STRONG | 1 | 0.0000 |
+| VIXCLS | VIX 변동성지수 | STRONG | 2 | 0.0000 |
+| DGS2 | 2Y Treasury Yield | STRONG | 2 | 0.0000 |
+| PPIACO | PPI MoM% | STRONG | 1 | 0.0000 |
+
+> Pearson 상관관계(섹션 3)는 동시적 연관성을, Granger는 **시간적 선행성**을 검증합니다.
+
 ## 4. ML Feature Importance (Random Forest)
 
 Random Forest(n=100, random_state=42) 기반 Feature Importance.
@@ -89,14 +120,17 @@ LASSO 선별 Factor를 대상으로 산정.
 
 ## 6. 컨설팅 함의
 
+### 현재 레짐 판단
+Neutral (신뢰도 99.9%)
+
 ### 선행지표 활용
-PAYEMS, M2SL가 INDPRO 선행 지표로 선별
+FEDFUNDS가 INDPRO 6개월 선행 (Granger STRONG)
 
 ### 데이터 제약
 주요 지표 모두 하드 데이터
 
 ### 클라이언트 설명 프레임
-금리 스프레드 역전 → 산업생산 둔화 신호 (LASSO/RF 공통 선별)
+현재 산업생산 레짐: Neutral. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할
 
 ---
 *본 보고서는 FRED 공공 데이터를 기반으로 자동 생성되었습니다. 수치 해석 시 출처(FRED)와 분석 기간을 반드시 명기하십시오.*

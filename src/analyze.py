@@ -11,7 +11,9 @@ import numpy as np
 from sklearn.linear_model import LassoCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.mixture import GaussianMixture
 from statsmodels.regression.rolling import RollingOLS
+from statsmodels.tsa.stattools import grangercausalitytests, adfuller
 import statsmodels.api as sm
 from scipy import stats
 
@@ -119,19 +121,148 @@ def run_importance(X: pd.DataFrame, y: pd.Series, selected_factors: list, factor
     return results
 
 
+def run_regime(y: pd.Series) -> dict:
+    """GMM 3-state regime detection on INDPRO MoM%. (EIMAS regime_analyzer.py 이식)
+    Expansion / Neutral / Contraction + Shannon Entropy 신뢰도."""
+    clean = y.dropna()
+    if len(clean) < 60:
+        return {"regime": "UNKNOWN", "probs": {}, "entropy": 1.0, "confidence": 0, "regime_series": []}
+
+    s = pd.Series(clean.values)
+    X = np.column_stack([
+        s.values,
+        s.rolling(12).mean().bfill().values,
+        s.rolling(12).std().bfill().values,
+    ])
+    Xs = StandardScaler().fit_transform(X)
+
+    gmm = GaussianMixture(n_components=3, covariance_type="full",
+                          max_iter=200, random_state=42, n_init=5)
+    gmm.fit(Xs)
+
+    # 평균 수익률 기준 정렬: Contraction(낮음) → Neutral → Expansion(높음)
+    sorted_idx = np.argsort(gmm.means_[:, 0])
+    labels = {sorted_idx[0]: "Contraction", sorted_idx[1]: "Neutral", sorted_idx[2]: "Expansion"}
+
+    probs_raw = gmm.predict_proba(Xs[-1:])[0]
+    probs = {labels[i]: round(float(p), 4) for i, p in enumerate(probs_raw)}
+    current_regime = labels[int(np.argmax(probs_raw))]
+
+    # Shannon Entropy (정규화)
+    p = probs_raw[probs_raw > 1e-10]
+    entropy = round(float(-np.sum(p * np.log2(p)) / np.log2(3)), 4)
+    confidence = round((1 - entropy) * 100, 1)
+
+    regime_series = [
+        {"date": str(d), "regime": labels[c]}
+        for d, c in zip(clean.index, gmm.predict(Xs))
+    ]
+    return {"regime": current_regime, "probs": probs,
+            "entropy": entropy, "confidence": confidence,
+            "regime_series": regime_series}
+
+
+def run_granger(X: pd.DataFrame, y: pd.Series,
+                factors_data: dict = None, max_lag: int = 12) -> list:
+    """Granger causality: Factor → INDPRO. (EIMAS shock_propagation/granger.py 이식)
+    ADF 정상성 변환 → grangercausalitytests → 최적 lag + p-value."""
+    label_map = {}
+    if factors_data:
+        label_map = {fid: fd.get("label", fid)
+                     for fid, fd in factors_data.get("factors", {}).items()}
+
+    def _stationary(s):
+        for _ in range(2):
+            try:
+                if adfuller(s.dropna())[1] < 0.05:
+                    return s
+            except Exception:
+                return s
+            s = s.diff()
+        return s
+
+    results = []
+    y_stat = _stationary(y)
+    for col in X.columns:
+        try:
+            df = pd.DataFrame({"y": y_stat, "x": _stationary(X[col])}).dropna()
+            if len(df) < max_lag * 3:
+                continue
+            gc = grangercausalitytests(df[["y", "x"]], maxlag=max_lag, verbose=False)
+            best_lag, best_p, best_f = 1, 1.0, 0.0
+            for lag in range(1, max_lag + 1):
+                f, p = gc[lag][0]["ssr_ftest"][:2]
+                if p < best_p:
+                    best_lag, best_p, best_f = lag, p, f
+            strength = ("STRONG" if best_p < 0.01 else
+                        "MODERATE" if best_p < 0.05 else
+                        "WEAK" if best_p < 0.10 else "NONE")
+            if best_p < 0.10:
+                results.append({"factor": col, "label": label_map.get(col, col),
+                                 "optimal_lag": best_lag,
+                                 "p_value": round(best_p, 6),
+                                 "f_statistic": round(best_f, 4),
+                                 "strength": strength})
+        except Exception as e:
+            print(f"  [Granger] {col} 실패: {e}")
+    return sorted(results, key=lambda r: r["p_value"])
+
+
+def run_lead_lag(X: pd.DataFrame, y: pd.Series,
+                 factors_data: dict = None, max_lag: int = 12) -> list:
+    """Cross-correlation lead-lag: Factor가 INDPRO를 몇 개월 선행하는가.
+    (EIMAS shock_propagation/lead_lag.py 이식)"""
+    label_map = {}
+    if factors_data:
+        label_map = {fid: fd.get("label", fid)
+                     for fid, fd in factors_data.get("factors", {}).items()}
+
+    results = []
+    for col in X.columns:
+        corrs = {}
+        for lag in range(-max_lag, max_lag + 1):
+            if lag > 0:
+                c = X[col].iloc[:-lag].corr(y.iloc[lag:])
+            elif lag < 0:
+                c = X[col].iloc[-lag:].corr(y.iloc[:lag])
+            else:
+                c = X[col].corr(y)
+            corrs[lag] = float(c) if not np.isnan(c) else 0.0
+
+        opt_lag = max(corrs, key=lambda k: abs(corrs[k]))
+        max_corr = corrs[opt_lag]
+        zero_corr = corrs[0]
+        is_leading = opt_lag > 0 and abs(max_corr) > abs(zero_corr)
+
+        results.append({"factor": col, "label": label_map.get(col, col),
+                         "optimal_lag": opt_lag,
+                         "max_corr": round(max_corr, 4),
+                         "zero_corr": round(zero_corr, 4),
+                         "is_leading": is_leading})
+
+    return sorted(results, key=lambda r: (-int(r["is_leading"]), -abs(r["max_corr"])))
+
+
 def analyze(factors_data: dict = None) -> dict:
     """Run all analyses and save outputs/context/analysis_YYYYMMDD.json."""
     if factors_data is None:
         factors_data = load_latest_factors()
 
     X, y = build_dataframe(factors_data)
-    lasso = run_lasso(X, y, factors_data)
-    corr = run_correlation(X, y, factors_data)
-    rolling = run_rolling_ols(X, y, lasso)
+    lasso    = run_lasso(X, y, factors_data)
+    corr     = run_correlation(X, y, factors_data)
+    rolling  = run_rolling_ols(X, y, lasso)
     importance = run_importance(X, y, lasso, factors_data)
+    regime   = run_regime(y)
+    granger  = run_granger(X, y, factors_data)
+    lead_lag = run_lead_lag(X, y, factors_data)
 
-    top_lead = ", ".join(r["factor"] for r in corr[:2]) if corr else "N/A"
     survey_factors = [r["factor"] for r in corr if "UMCSENT" in r["factor"]]
+    top_g   = granger[0] if granger else None
+    top_fac = top_g["factor"] if top_g else (corr[0]["factor"] if corr else "N/A")
+    top_lag = top_g["optimal_lag"] if top_g else 0
+    reg_str = regime.get("regime", "N/A")
+    reg_conf = regime.get("confidence", 0)
 
     result = {
         "analyzed_at": datetime.now().isoformat(),
@@ -141,14 +272,21 @@ def analyze(factors_data: dict = None) -> dict:
             "end": str(y.index.max()),
             "n_obs": len(y),
         },
+        "regime": regime,
         "lasso_selected": lasso,
         "correlation": corr,
+        "granger": granger,
+        "lead_lag": lead_lag,
         "rolling_stability": rolling,
         "importance": importance,
         "consulting_implications": {
-            "leading_indicators": f"{top_lead}가 {factors_data['target']['series']} 선행 지표로 선별",
-            "data_constraints": "서베이 기반 지표는 후행 가능성 있음" if survey_factors else "주요 지표 모두 하드 데이터",
-            "client_narrative": "금리 스프레드 역전 → 산업생산 둔화 신호 (LASSO/RF 공통 선별)",
+            "current_regime": f"{reg_str} (신뢰도 {reg_conf}%)",
+            "leading_indicators": (
+                f"{top_fac}가 INDPRO {top_lag}개월 선행"
+                + (f" (Granger {top_g['strength']})" if top_g else "")
+            ),
+            "data_constraints": "서베이 기반 지표(UMCSENT)는 후행 가능성 있음" if survey_factors else "주요 지표 모두 하드 데이터",
+            "client_narrative": f"현재 산업생산 레짐: {reg_str}. {top_fac} 신호 추이가 생산계획 조기 경보 역할",
         },
     }
 

@@ -37,6 +37,31 @@ def build_factor_report(factors_data: dict = None, analysis: dict = None, chart_
     period = analysis.get("data_period", {})
     now_iso = datetime.now().strftime("%Y-%m-%d")
 
+    # --- Section 0: 레짐 분석 (Executive Summary) ---
+    regime_info = analysis.get("regime", {})
+    reg_label   = regime_info.get("regime", "N/A")
+    reg_conf    = regime_info.get("confidence", 0)
+    reg_probs   = regime_info.get("probs", {})
+    reg_entropy = regime_info.get("entropy", 1.0)
+    prob_str = " | ".join(f"{k}: {v*100:.1f}%" for k, v in reg_probs.items())
+
+    ci = analysis.get("consulting_implications", {})
+    s0 = f"""## 0. Executive Summary
+
+| 항목 | 내용 |
+|------|------|
+| **현재 레짐** | **{reg_label}** |
+| 레짐 신뢰도 | {reg_conf}% (Shannon Entropy: {reg_entropy:.3f}) |
+| 레짐 확률 분포 | {prob_str} |
+| 핵심 선행지표 | {ci.get('leading_indicators', 'N/A')} |
+| 클라이언트 권고 | {ci.get('client_narrative', 'N/A')} |
+
+"""
+    if chart_paths.get("regime_timeline"):
+        s0 += f"![레짐 타임라인]({chart_paths['regime_timeline']})\n"
+    if chart_paths.get("signal_chart"):
+        s0 += f"\n![The Signal]({chart_paths['signal_chart']})\n"
+
     # --- Section 1: 분석 개요 ---
     s1 = f"""## 1. 분석 개요
 
@@ -91,6 +116,20 @@ LASSO 선별 Factor를 대상으로 산정.
     if chart_paths.get("importance_bar"):
         s4 += f"\n![Feature Importance]({chart_paths['importance_bar']})\n"
 
+    # --- Section 3.5: Granger 인과관계 ---
+    granger = analysis.get("granger", [])
+    granger_rows = [[r["factor"], r["label"], r["strength"],
+                     r["optimal_lag"], f"{r['p_value']:.4f}"]
+                    for r in granger[:8]]
+    s35 = f"""## 3.5 Granger 인과관계 검증
+
+ADF 정상성 변환 후 F-test. STRONG: p<0.01 / MODERATE: p<0.05 / WEAK: p<0.10.
+
+{_fmt_table(granger_rows, ["Factor", "지표명", "강도", "최적 Lag(월)", "p-value"])}
+
+> Pearson 상관관계(섹션 3)는 동시적 연관성을, Granger는 **시간적 선행성**을 검증합니다.
+"""
+
     # --- Section 5: Rolling 안정성 ---
     rs = analysis.get("rolling_stability", {})
     stable = ", ".join(rs.get("stable_factors", [])) or "없음"
@@ -111,7 +150,11 @@ LASSO 선별 Factor를 대상으로 산정.
 
     # --- Section 6: 컨설팅 함의 ---
     ci = analysis.get("consulting_implications", {})
+    reg_label_s6 = analysis.get("regime", {}).get("regime", "N/A")
     s6 = f"""## 6. 컨설팅 함의
+
+### 현재 레짐 판단
+{ci.get('current_regime', 'N/A')}
 
 ### 선행지표 활용
 {ci.get('leading_indicators', 'N/A')}
@@ -134,9 +177,11 @@ LASSO 선별 Factor를 대상으로 산정.
 
 ---
 
+{s0}
 {s1}
 {s2}
 {s3}
+{s35}
 {s4}
 {s5}
 {s6}"""
