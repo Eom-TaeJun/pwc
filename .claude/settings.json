@@ -1,0 +1,57 @@
+{
+  "hooks": {
+
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"[pwc] API 상태 — FRED: $([ -n \"$FRED_API_KEY\" ] && echo ✓ || echo ✗ MISSING)\"'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "파일 쓰기 검증: (1) outputs/ 외부 경로에 분석 결과(JSON, MD, PNG)를 저장하려 하는가? (2) .env 또는 FRED_API_KEY가 포함된 파일을 수정하려 하는가? (3) .claude/skills/ 하위 파일을 수정하려 하는가? 세 가지 모두 해당 없으면 'approve', 하나라도 해당하면 'deny'와 이유를 반환하라.",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "작업 완료 검증: (1) 요청된 보고서가 outputs/reports/ 에 저장되었는가? (2) 보고서 내 테이블에 None 값이 남아있지 않은가? (3) 모든 수치에 FRED 시리즈 ID와 수집 날짜가 명기되었는가? 모두 충족하면 'approve', 미완료 항목이 있으면 'block'과 구체적 미완료 항목 목록을 반환하라.",
+            "timeout": 25
+          }
+        ]
+      }
+    ],
+
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "컨텍스트 압축 전 보존: (1) 완료된 파이프라인 단계 (collect/correlate/importance/report), (2) 생성된 outputs/ 파일 경로 목록, (3) LASSO 선별된 Factor 목록과 alpha 값, (4) 다음 수행할 작업을 systemMessage에 요약해 압축 후에도 연속성이 유지되도록 하라.",
+            "timeout": 20
+          }
+        ]
+      }
+    ]
+
+  }
+}
