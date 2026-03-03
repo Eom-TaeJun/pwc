@@ -1,6 +1,8 @@
-"""Pearson 상관관계 분석 (시차 0·3·6·12개월)."""
+"""Pearson 상관관계 분석 (시차별)."""
 import pandas as pd
 from scipy import stats
+
+from src.config import CORR_LAGS
 
 
 def run_correlation(X: pd.DataFrame, y: pd.Series, factors_data: dict) -> list:
@@ -10,7 +12,7 @@ def run_correlation(X: pd.DataFrame, y: pd.Series, factors_data: dict) -> list:
     results = []
     for col in X.columns:
         best = {"corr": 0, "pvalue": 1, "lag_months": 0}
-        for lag in [0, 3, 6, 12]:
+        for lag in CORR_LAGS:
             aligned = pd.concat([X[col].shift(lag), y], axis=1).dropna()
             if len(aligned) < 10:
                 continue

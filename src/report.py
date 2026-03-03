@@ -8,6 +8,13 @@ import os
 import glob
 from datetime import datetime
 
+from src.config import (
+    LASSO_CV_FOLDS, RF_N_ESTIMATORS, RF_RANDOM_STATE,
+    ROLLING_WINDOW, ROLLING_STABILITY_THRESHOLD,
+    GRANGER_STRONG, GRANGER_MODERATE, GRANGER_WEAK,
+    LEAD_LAG_MAX_LAG, CORR_LAGS,
+)
+
 OUTPUT_DIR = "outputs/reports"
 
 
@@ -80,7 +87,7 @@ def build_factor_report(factors_data: dict = None, analysis: dict = None, chart_
     lasso_rows = [[r["factor"], r["label"], f"{r['coefficient']:.4f}"] for r in lasso[:10]]
     s2 = f"""## 2. LASSO 선행지표 선별 결과
 
-LASSO 정규화(교차검증 5-Fold)로 {len(lasso)}개 Factor 선별.
+LASSO 정규화(교차검증 {LASSO_CV_FOLDS}-Fold)로 {len(lasso)}개 Factor 선별.
 계수 크기(절댓값)는 상대적 중요도를 나타내며, 0이 아닌 계수만 표시.
 
 {_fmt_table(lasso_rows, ["Factor", "지표명", "계수"])}
@@ -94,9 +101,10 @@ LASSO 정규화(교차검증 5-Fold)로 {len(lasso)}개 Factor 선별.
     corr = analysis.get("correlation", [])
     corr_rows = [[r["factor"], r["label"], f"{r['corr']:.3f}", f"{r['pvalue']:.4f}", r["lag_months"]]
                  for r in corr[:8]]
+    corr_lag_str = "·".join(str(lag) for lag in CORR_LAGS)
     s3 = f"""## 3. 상관관계 분석 (시차별)
 
-각 Factor와 INDPRO 간 피어슨 상관계수. 시차 0·3·6·12개월 중 최적 lag 선택 (p < 0.05 기준).
+각 Factor와 INDPRO 간 피어슨 상관계수. 시차 {corr_lag_str}개월 중 최적 lag 선택 (p < 0.05 기준).
 
 {_fmt_table(corr_rows, ["Factor", "지표명", "상관계수", "p-value", "최적 Lag(월)"])}
 """
@@ -108,7 +116,7 @@ LASSO 정규화(교차검증 5-Fold)로 {len(lasso)}개 Factor 선별.
     imp_rows = [[r["rank"], r["factor"], r["label"], f"{r['importance']:.4f}"] for r in imp[:10]]
     s4 = f"""## 4. ML Feature Importance (Random Forest)
 
-Random Forest(n=100, random_state=42) 기반 Feature Importance.
+Random Forest(n={RF_N_ESTIMATORS}, random_state={RF_RANDOM_STATE}) 기반 Feature Importance.
 LASSO 선별 Factor를 대상으로 산정.
 
 {_fmt_table(imp_rows, ["순위", "Factor", "지표명", "Importance"])}
@@ -123,7 +131,8 @@ LASSO 선별 Factor를 대상으로 산정.
                     for r in granger[:8]]
     s35 = f"""## 3.5 Granger 인과관계 검증
 
-ADF 정상성 변환 후 F-test. STRONG: p<0.01 / MODERATE: p<0.05 / WEAK: p<0.10.
+ADF 정상성 변환 후 F-test. \
+STRONG: p<{GRANGER_STRONG} / MODERATE: p<{GRANGER_MODERATE} / WEAK: p<{GRANGER_WEAK}.
 
 {_fmt_table(granger_rows, ["Factor", "지표명", "강도", "최적 Lag(월)", "p-value"])}
 
@@ -146,7 +155,7 @@ ADF 정상성 변환 후 F-test. STRONG: p<0.01 / MODERATE: p<0.05 / WEAK: p<0.1
 
     s37 = f"""## 3.7 Lead-Lag 교차검증
 
-Cross-correlation (lag -12~+12개월)으로 Granger 결과를 교차검증.
+Cross-correlation (lag -{LEAD_LAG_MAX_LAG}~+{LEAD_LAG_MAX_LAG}개월)으로 Granger 결과를 교차검증.
 **양방법 공통 선행 Factor = 강한 증거**, 불일치 = 구조 변화 또는 척도 차이 가능성.
 
 {_fmt_table(ll_rows, ["Factor", "지표명", "최적 Lag", "최대 상관계수", "선행?"])}
@@ -162,6 +171,10 @@ Cross-correlation (lag -12~+12개월)으로 Granger 결과를 교차검증.
 
     # --- Section 5: Rolling 안정성 ---
     rs = analysis.get("rolling_stability", {})
+    rs_params = rs.get("_params", {"window": ROLLING_WINDOW,
+                                   "threshold": ROLLING_STABILITY_THRESHOLD})
+    r_window = rs_params["window"]
+    r_threshold = rs_params["threshold"]
     stable_list = rs.get("stable_factors", [])
     unstable_list = rs.get("unstable_factors", [])
     stable = ", ".join(stable_list) or "없음"
@@ -172,22 +185,22 @@ Cross-correlation (lag -12~+12개월)으로 Granger 결과를 교차검증.
         instability_note = f"""
 ### 불안정 Factor 해석 (클라이언트 설명용)
 
-불안정({len(unstable_list)}개)은 **분석 실패가 아닙니다** — 경제 구조 변화(2008 금융위기, 2020 팬데믹)가 \
+불안정({len(unstable_list)}개)은 **분석 실패가 아닙니다** — 경제 구조 변화가 \
 빈번하다는 현실을 포착한 결과입니다.
 
 | 관점 | 내용 |
 |------|------|
-| 현재 구간 신뢰도 | 최근 36개월 기준 Granger·상관관계로 선행성 별도 검증 완료 |
-| 구조 변화 위험 | 팬데믹·금융위기급 외부 충격 시 계수 방향 역전 가능 |
+| 현재 구간 신뢰도 | 최근 {r_window}개월 기준 Granger·상관관계로 선행성 별도 검증 완료 |
+| 구조 변화 위험 | 외부 충격 시 계수 방향 역전 가능 |
 | 관리 권고 | 분기 1회 Factor Pool 재평가, 계수 방향 역전 시 조기 경보 |
 | 클라이언트 메시지 | "선행지표 관계는 고정값이 아닌 만큼 분기별 재검토 프로세스가 필요합니다." |
 """
     else:
         instability_note = ""
 
-    s5 = f"""## 5. Rolling OLS 안정성 검증 (36개월 창)
+    s5 = f"""## 5. Rolling OLS 안정성 검증 ({r_window}개월 창)
 
-계수 시계열 안정성 기준: |std/mean| < 0.5 → 안정, ≥ 0.5 → 불안정.
+계수 시계열 안정성 기준: |std/mean| < {r_threshold} → 안정, ≥ {r_threshold} → 불안정.
 
 | 구분 | Factor |
 |------|--------|

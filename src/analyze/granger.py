@@ -2,6 +2,8 @@
 import pandas as pd
 from statsmodels.tsa.stattools import grangercausalitytests, adfuller
 
+from src.config import GRANGER_MAX_LAG, GRANGER_STRONG, GRANGER_MODERATE, GRANGER_WEAK
+
 
 def _stationary(s: pd.Series) -> pd.Series:
     for _ in range(2):
@@ -15,8 +17,8 @@ def _stationary(s: pd.Series) -> pd.Series:
 
 
 def run_granger(X: pd.DataFrame, y: pd.Series,
-                factors_data: dict = None, max_lag: int = 12) -> list:
-    """Factor → INDPRO Granger causality. STRONG p<0.01 / MODERATE p<0.05 / WEAK p<0.10."""
+                factors_data: dict = None, max_lag: int = GRANGER_MAX_LAG) -> list:
+    """Factor → INDPRO Granger causality."""
     label_map = {}
     if factors_data:
         label_map = {fid: fd.get("label", fid)
@@ -34,9 +36,10 @@ def run_granger(X: pd.DataFrame, y: pd.Series,
                 f, p = gc[lag][0]["ssr_ftest"][:2]
                 if p < best_p:
                     best_lag, best_p, best_f = lag, p, f
-            strength = ("STRONG" if best_p < 0.01 else "MODERATE" if best_p < 0.05
-                        else "WEAK" if best_p < 0.10 else "NONE")
-            if best_p < 0.10:
+            strength = ("STRONG" if best_p < GRANGER_STRONG
+                        else "MODERATE" if best_p < GRANGER_MODERATE
+                        else "WEAK" if best_p < GRANGER_WEAK else "NONE")
+            if best_p < GRANGER_WEAK:
                 results.append({"factor": col, "label": label_map.get(col, col),
                                  "optimal_lag": best_lag, "p_value": round(best_p, 6),
                                  "f_statistic": round(best_f, 4), "strength": strength})

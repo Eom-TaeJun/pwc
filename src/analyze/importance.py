@@ -2,6 +2,8 @@
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 
+from src.config import RF_N_ESTIMATORS, RF_RANDOM_STATE
+
 
 def run_importance(X: pd.DataFrame, y: pd.Series,
                    selected_factors: list, factors_data: dict = None) -> list:
@@ -12,7 +14,9 @@ def run_importance(X: pd.DataFrame, y: pd.Series,
                      for fid, fd in factors_data.get("factors", {}).items()}
     factors = [f["factor"] for f in selected_factors] or list(X.columns)
     factors = [f for f in factors if f in X.columns]
-    rf = RandomForestRegressor(n_estimators=100, random_state=42).fit(X[factors], y)
+    rf = RandomForestRegressor(
+        n_estimators=RF_N_ESTIMATORS, random_state=RF_RANDOM_STATE
+    ).fit(X[factors], y)
     return [
         {"factor": fac, "importance": round(imp, 6), "rank": i + 1,
          "label": label_map.get(fac, fac)}

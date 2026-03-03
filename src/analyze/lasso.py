@@ -1,7 +1,9 @@
-"""LASSO 선행지표 선별 (LassoCV, 5-Fold)."""
+"""LASSO 선행지표 선별 (LassoCV)."""
 import pandas as pd
 from sklearn.linear_model import LassoCV
 from sklearn.preprocessing import StandardScaler
+
+from src.config import LASSO_CV_FOLDS
 
 
 def run_lasso(X: pd.DataFrame, y: pd.Series, factors_data: dict = None) -> list:
@@ -12,7 +14,7 @@ def run_lasso(X: pd.DataFrame, y: pd.Series, factors_data: dict = None) -> list:
                      for fid, fd in factors_data.get("factors", {}).items()}
     scaler = StandardScaler()
     Xs = scaler.fit_transform(X)
-    model = LassoCV(cv=5, max_iter=10000).fit(Xs, y)
+    model = LassoCV(cv=LASSO_CV_FOLDS, max_iter=10000).fit(Xs, y)
     results = [
         {"factor": col, "coefficient": round(coef, 4), "label": label_map.get(col, col)}
         for col, coef in zip(X.columns, model.coef_)
