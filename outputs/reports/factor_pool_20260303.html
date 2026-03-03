@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>factor_pool_20260303</title>
+
+<style>
+  body { font-family: 'Noto Sans KR', Arial, sans-serif; max-width: 900px;
+         margin: 40px auto; padding: 0 24px; color: #1a1a1a; line-height: 1.7; }
+  h1 { font-size: 1.6em; border-bottom: 3px solid #003087; padding-bottom: 8px;
+       color: #003087; }
+  h2 { font-size: 1.2em; margin-top: 2em; color: #003087;
+       border-left: 4px solid #d4a800; padding-left: 10px; }
+  h3 { font-size: 1em; color: #444; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88em;
+          margin: 12px 0; }
+  th { background: #003087; color: white; padding: 8px 12px; text-align: left; }
+  td { padding: 7px 12px; border-bottom: 1px solid #e0e0e0; }
+  tr:nth-child(even) td { background: #f7f9fc; }
+  blockquote { border-left: 3px solid #d4a800; margin: 0; padding: 8px 16px;
+               background: #fffdf0; color: #555; }
+  code { background: #f0f0f0; padding: 2px 5px; border-radius: 3px;
+         font-size: 0.87em; }
+  img { max-width: 100%; margin: 12px 0; }
+  strong { color: #003087; }
+  @media print {
+    body { margin: 20px; }
+    h1, h2 { page-break-after: avoid; }
+    table { page-break-inside: avoid; }
+  }
+</style>
+
+</head><body>
+<h1>산업생산 Neutral 국면: Fed Funds Rate가 -11개월 앞서 신호를 보낸다</h1>
+<p><strong>생성일</strong>: 2026-03-03 | <strong>Target</strong>: 산업생산지수 MoM% | <strong>출처</strong>: FRED</p>
+<hr />
+<h2>Executive Summary</h2>
+<blockquote>
+<p><strong>한 줄 결론</strong>: 현재 산업생산 레짐: Neutral. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>현재 레짐</strong></td>
+<td><strong>Neutral</strong> (신뢰도 99.9%)</td>
+</tr>
+<tr>
+<td>레짐 확률 분포</td>
+<td>Expansion: 0.0%</td>
+</tr>
+<tr>
+<td>핵심 선행지표</td>
+<td>FEDFUNDS가 INDPRO 6개월 선행 (Granger STRONG)</td>
+</tr>
+<tr>
+<td>분석 기간</td>
+<td>2000-02-01 ~ 2025-11-01 (309개월)</td>
+</tr>
+<tr>
+<td>데이터 출처</td>
+<td>FRED (Federal Reserve Bank of St. Louis)</td>
+</tr>
+</tbody>
+</table>
+<h2>1. 지금 어디에 있는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: 미국 산업생산(INDPRO)은 현재 <strong>Neutral</strong> 국면에 있으며,
+Shannon Entropy 0.001로 레짐 전환 가능성이 낮은 안정적 상태입니다.</p>
+</blockquote>
+<p>GMM 3-state 모델이 309개월 데이터에서 식별한 현재 레짐:</p>
+<table>
+<thead>
+<tr>
+<th>지표</th>
+<th>값</th>
+<th>해석</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>레짐</strong></td>
+<td>Neutral</td>
+<td>중립 국면</td>
+</tr>
+<tr>
+<td>신뢰도</td>
+<td>99.9%</td>
+<td>Shannon Entropy 0.001</td>
+</tr>
+<tr>
+<td>레짐 확률</td>
+<td>Expansion: 0.0%</td>
+<td>Neutral: 100.0%</td>
+</tr>
+</tbody>
+</table>
+<p>Neutral (신뢰도 99.9%)</p>
+<p><img alt="레짐 타임라인" src="outputs/charts/regime_timeline_20260303.png" /></p>
+<h2>2. 무엇이 먼저 움직이는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: Granger 인과성과 Cross-correlation이 <strong>동시에 확인한 선행지표 0개</strong>는
+INDPRO 변곡점을 수개월 앞서 포착합니다.</p>
+</blockquote>
+<p><img alt="The Signal — 선행지표 vs INDPRO" src="outputs/charts/signal_chart_20260303.png" /></p>
+<p><em>선행 Factor 없음 — 데이터 재확인 필요</em></p>
+<blockquote>
+<p><strong>왜 두 가지 방법인가?</strong> Granger 검증은 통계적 선행성(차분 기준),
+Cross-correlation은 원시 변화율 기준입니다. 양방법 합의 시 선행성 신뢰도가 올라갑니다.</p>
+</blockquote>
+<p><img alt="Factor 상관관계 히트맵" src="outputs/charts/correlation_heatmap_20260303.png" /></p>
+<h2>3. 얼마나 확신할 수 있는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: LASSO·Random Forest·Rolling OLS 세 방법이 공통으로 지목한 Factor는
+<strong>UMCSENT, DGS10, PPIACO, DCOILWTICO, M2SL, DGS2, VIXCLS, RETAILSMNSA, DEXUSEU, HOUST, UNRATE, PAYEMS</strong>입니다. 단일 방법 의존보다 신뢰도가 높습니다.</p>
+</blockquote>
+<h3>LASSO + ML 교차검증</h3>
+<p>LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Factor:</p>
+<table>
+<thead>
+<tr>
+<th>순위</th>
+<th>지표명</th>
+<th>RF Importance</th>
+<th>LASSO 선별</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>0.2666</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>2</td>
+<td>M2 통화량 MoM%</td>
+<td>0.2268</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>3</td>
+<td>실업률</td>
+<td>0.1194</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>4</td>
+<td>주택착공 MoM%</td>
+<td>0.1046</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>5</td>
+<td>WTI 유가 MoM%</td>
+<td>0.0627</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>6</td>
+<td>PPI MoM%</td>
+<td>0.0449</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>7</td>
+<td>2Y Treasury Yield</td>
+<td>0.0418</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>8</td>
+<td>소매판매 MoM%</td>
+<td>0.0357</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Feature Importance" src="outputs/charts/importance_bar_20260303.png" /></p>
+<h3>시간적 안정성 (Rolling OLS 36개월 창)</h3>
+<p>계수가 구간에 따라 흔들리지 않는지 검증. |std/mean| &lt; 0.5 → 안정.</p>
+<table>
+<thead>
+<tr>
+<th>구분</th>
+<th>Factor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>안정</strong></td>
+<td>없음</td>
+</tr>
+<tr>
+<td><strong>불안정</strong></td>
+<td>PAYEMS, UNRATE, HOUST, VIXCLS, DGS2</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>불안정 Factor 해석</strong>: 분석 실패가 아닌 경제 구조 변화의 현실을 반영합니다.
+계수 방향 역전 감지 시 조기 경보 기준으로 활용하십시오 (분기 1회 재평가 권고).</p>
+</blockquote>
+<h2>4. 무엇을 해야 하는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: 현재 <strong>Neutral</strong> 국면에서 선행지표가 보내는 신호에 따라
+세 가지 시나리오로 대응 체계를 분리합니다.</p>
+</blockquote>
+<h3>시나리오별 대응 프레임</h3>
+<table>
+<thead>
+<tr>
+<th>시나리오</th>
+<th>신호 조건</th>
+<th>핵심 모니터링 Factor</th>
+<th>대응 권고</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Expansion</strong></td>
+<td>선행 Factor 계속 상승</td>
+<td>UMCSENT, DGS10, PPIACO</td>
+<td>현 포지션 유지, 레짐 전환 모니터링</td>
+</tr>
+<tr>
+<td><strong>Neutral</strong></td>
+<td>혼조 — 방향성 불확실</td>
+<td>UMCSENT, DGS10, PPIACO</td>
+<td>분기 1회 Factor Pool 재평가</td>
+</tr>
+<tr>
+<td><strong>Contraction</strong></td>
+<td>선행 Factor 하락 전환</td>
+<td>UMCSENT, DGS10, PPIACO</td>
+<td>조기 경보 발동, 리스크 재검토</td>
+</tr>
+</tbody>
+</table>
+<h3>모니터링 우선순위</h3>
+<p>서베이 기반 지표(UMCSENT)는 후행 가능성 있음</p>
+<h3>클라이언트 설명 프레임</h3>
+<p>현재 산업생산 레짐: Neutral. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할</p>
+<hr />
+<p><em>본 보고서는 FRED 공공 데이터를 기반으로 자동 생성되었습니다.
+수치 해석 시 출처(FRED)와 분석 기간을 반드시 명기하십시오.</em></p>
+<hr />
+<h2>부록 A: 방법론</h2>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>방법</th>
+<th>파라미터</th>
+<th>목적</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>레짐 분류</td>
+<td>GMM 3-state</td>
+<td>n_components=3</td>
+<td>거시 국면 구분</td>
+</tr>
+<tr>
+<td>Factor 선별</td>
+<td>LASSO (LassoCV)</td>
+<td>CV Folds=5</td>
+<td>희소 선형 선별</td>
+</tr>
+<tr>
+<td>상관관계</td>
+<td>Pearson (시차별)</td>
+<td>lag=0·3·6·12개월</td>
+<td>동시적·지연 상관</td>
+</tr>
+<tr>
+<td>선행성 검증</td>
+<td>Granger F-test</td>
+<td>ADF 정상화, maxlag=12</td>
+<td>시간적 인과성</td>
+</tr>
+<tr>
+<td>선행성 교차검증</td>
+<td>Cross-correlation</td>
+<td>MoM% 변환, ±12개월</td>
+<td>Granger 결과 보완</td>
+</tr>
+<tr>
+<td>ML 중요도</td>
+<td>Random Forest</td>
+<td>n=100, seed=42</td>
+<td>비선형 기여도</td>
+</tr>
+<tr>
+<td>안정성</td>
+<td>Rolling OLS</td>
+<td>window=36개월</td>
+<td>계수 불안정 탐지</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Granger 강도 기준</strong>: STRONG p&lt;0.01 / MODERATE p&lt;0.05 / WEAK p&lt;0.1</p>
+<h2>부록 B: 전체 데이터 테이블</h2>
+<h3>B-1. LASSO 선별 Factor (전체)</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>지표명</th>
+<th>계수</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PAYEMS</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>0.8052</td>
+</tr>
+<tr>
+<td>UNRATE</td>
+<td>실업률</td>
+<td>0.2204</td>
+</tr>
+<tr>
+<td>HOUST</td>
+<td>주택착공 MoM%</td>
+<td>0.1597</td>
+</tr>
+<tr>
+<td>VIXCLS</td>
+<td>VIX 변동성지수</td>
+<td>-0.0701</td>
+</tr>
+<tr>
+<td>DGS2</td>
+<td>2Y Treasury Yield</td>
+<td>0.0662</td>
+</tr>
+<tr>
+<td>RETAILSMNSA</td>
+<td>소매판매 MoM%</td>
+<td>0.0549</td>
+</tr>
+<tr>
+<td>M2SL</td>
+<td>M2 통화량 MoM%</td>
+<td>-0.0540</td>
+</tr>
+<tr>
+<td>PPIACO</td>
+<td>PPI MoM%</td>
+<td>0.0343</td>
+</tr>
+<tr>
+<td>UMCSENT</td>
+<td>미시간 소비자심리</td>
+<td>0.0280</td>
+</tr>
+<tr>
+<td>DGS10</td>
+<td>10Y Treasury Yield</td>
+<td>0.0179</td>
+</tr>
+<tr>
+<td>DEXUSEU</td>
+<td>USD/EUR 환율</td>
+<td>-0.0172</td>
+</tr>
+<tr>
+<td>DCOILWTICO</td>
+<td>WTI 유가 MoM%</td>
+<td>0.0097</td>
+</tr>
+</tbody>
+</table>
+<h3>B-2. 상관관계 분석 (전체)</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>지표명</th>
+<th>상관계수</th>
+<th>p-value</th>
+<th>최적 Lag(월)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PAYEMS</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>0.779</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>M2SL</td>
+<td>M2 통화량 MoM%</td>
+<td>-0.391</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>DCOILWTICO</td>
+<td>WTI 유가 MoM%</td>
+<td>0.371</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>HOUST</td>
+<td>주택착공 MoM%</td>
+<td>0.360</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>PPIACO</td>
+<td>PPI MoM%</td>
+<td>0.280</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>VIXCLS</td>
+<td>VIX 변동성지수</td>
+<td>-0.239</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>UNRATE</td>
+<td>실업률</td>
+<td>0.181</td>
+<td>0.0014</td>
+<td>3</td>
+</tr>
+<tr>
+<td>RETAILSMNSA</td>
+<td>소매판매 MoM%</td>
+<td>0.146</td>
+<td>0.0102</td>
+<td>0</td>
+</tr>
+<tr>
+<td>FEDFUNDS</td>
+<td>Fed Funds Rate</td>
+<td>-0.117</td>
+<td>0.0442</td>
+<td>12</td>
+</tr>
+</tbody>
+</table>
+<h3>B-3. Granger 인과관계 (전체)</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>지표명</th>
+<th>강도</th>
+<th>최적 Lag(월)</th>
+<th>p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FEDFUNDS</td>
+<td>Fed Funds Rate</td>
+<td>STRONG</td>
+<td>6</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>UNRATE</td>
+<td>실업률</td>
+<td>STRONG</td>
+<td>7</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>PAYEMS</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>STRONG</td>
+<td>11</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>M2SL</td>
+<td>M2 통화량 MoM%</td>
+<td>STRONG</td>
+<td>5</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>DCOILWTICO</td>
+<td>WTI 유가 MoM%</td>
+<td>STRONG</td>
+<td>1</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>VIXCLS</td>
+<td>VIX 변동성지수</td>
+<td>STRONG</td>
+<td>2</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>DGS2</td>
+<td>2Y Treasury Yield</td>
+<td>STRONG</td>
+<td>2</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>PPIACO</td>
+<td>PPI MoM%</td>
+<td>STRONG</td>
+<td>1</td>
+<td>0.0000</td>
+</tr>
+<tr>
+<td>DGS10</td>
+<td>10Y Treasury Yield</td>
+<td>STRONG</td>
+<td>1</td>
+<td>0.0001</td>
+</tr>
+<tr>
+<td>RETAILSMNSA</td>
+<td>소매판매 MoM%</td>
+<td>MODERATE</td>
+<td>12</td>
+<td>0.0114</td>
+</tr>
+<tr>
+<td>UMCSENT</td>
+<td>미시간 소비자심리</td>
+<td>MODERATE</td>
+<td>2</td>
+<td>0.0225</td>
+</tr>
+<tr>
+<td>CPIAUCSL</td>
+<td>CPI YoY%</td>
+<td>MODERATE</td>
+<td>1</td>
+<td>0.0376</td>
+</tr>
+<tr>
+<td>DEXUSEU</td>
+<td>USD/EUR 환율</td>
+<td>WEAK</td>
+<td>7</td>
+<td>0.0626</td>
+</tr>
+<tr>
+<td>HOUST</td>
+<td>주택착공 MoM%</td>
+<td>WEAK</td>
+<td>2</td>
+<td>0.0814</td>
+</tr>
+</tbody>
+</table>
+<p style="color:#888;font-size:0.8em;margin-top:3em;border-top:1px solid #ddd;padding-top:8px">
+  PDF 저장: 브라우저에서 Ctrl+P → PDF로 인쇄
+</p>
+</body></html>

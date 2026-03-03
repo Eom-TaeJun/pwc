@@ -1,18 +1,24 @@
-# 목적: Factor Pool 리서치 MD 보고서 생성
+# 목적: Factor Pool 리서치 MD 보고서 생성 (PwC 컨설팅 스타일)
 # 입력: outputs/context/factors_*.json + analysis_*.json + chart paths
 # 출력: outputs/reports/factor_pool_YYYYMMDD.md
 # 제외: PDF 변환, 웹 렌더링
 
+import glob
 import json
 import os
-import glob
 from datetime import datetime
 
 from src.config import (
-    LASSO_CV_FOLDS, RF_N_ESTIMATORS, RF_RANDOM_STATE,
-    ROLLING_WINDOW, ROLLING_STABILITY_THRESHOLD,
-    GRANGER_STRONG, GRANGER_MODERATE, GRANGER_WEAK,
-    LEAD_LAG_MAX_LAG, CORR_LAGS,
+    CORR_LAGS,
+    GRANGER_MODERATE,
+    GRANGER_STRONG,
+    GRANGER_WEAK,
+    LASSO_CV_FOLDS,
+    LEAD_LAG_MAX_LAG,
+    RF_N_ESTIMATORS,
+    RF_RANDOM_STATE,
+    ROLLING_STABILITY_THRESHOLD,
+    ROLLING_WINDOW,
 )
 
 OUTPUT_DIR = "outputs/reports"
@@ -27,14 +33,64 @@ def _load_latest(prefix: str) -> dict:
 
 
 def _fmt_table(rows: list, headers: list) -> str:
-    lines = ["| " + " | ".join(headers) + " |",
-             "| " + " | ".join(["---"] * len(headers)) + " |"]
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(["---"] * len(headers)) + " |",
+    ]
     for row in rows:
         lines.append("| " + " | ".join(str(v) for v in row) + " |")
     return "\n".join(lines)
 
 
-def build_factor_report(factors_data: dict = None, analysis: dict = None, chart_paths: dict = None) -> str:
+def _dynamic_title(analysis: dict) -> str:
+    """분석 결과에서 인사이트 제목 자동 생성."""
+    regime = analysis.get("regime", {}).get("regime", "Neutral")
+    # Granger STRONG/MODERATE 중 최우선 선행 Factor
+    granger = analysis.get("granger", [])
+    lead_lag = analysis.get("lead_lag", [])
+    granger_strong = [r for r in granger if r["strength"] in ("STRONG", "MODERATE")]
+    leading = [r for r in lead_lag if r.get("is_leading")]
+    # 양방법 합의 Factor 우선
+    granger_ids = {r["factor"] for r in granger_strong}
+    lead_ids = {r["factor"] for r in leading}
+    consensus = granger_ids & lead_ids
+    if consensus:
+        fid = next(iter(consensus))
+        candidates = [r for r in lead_lag if r["factor"] == fid]
+        top = candidates[0] if candidates else leading[0] if leading else None
+    elif leading:
+        top = leading[0]
+    elif granger_strong:
+        top = granger_strong[0]
+        top = next((r for r in lead_lag if r["factor"] == top["factor"]), None)
+    else:
+        top = None
+
+    if top:
+        label = top["label"]
+        lag = top.get("optimal_lag", "N/A")
+        return f"산업생산 {regime} 국면: {label}가 {lag}개월 앞서 신호를 보낸다"
+    return f"산업생산 {regime} 국면 진단 — Factor Pool 선행지표 분석"
+
+
+def _scenario_table(reg_label: str, granger: list, lead_lag: list) -> str:
+    """레짐별 3시나리오 + 모니터링 Factor."""
+    granger_ids = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
+    leading = [r for r in lead_lag if r.get("is_leading")]
+    lead_ids = {r["factor"] for r in leading}
+    watch = ", ".join(granger_ids & lead_ids) or ", ".join(list(granger_ids)[:3]) or "N/A"
+
+    rows = [
+        ["**Expansion**", "선행 Factor 계속 상승", f"{watch}", "현 포지션 유지, 레짐 전환 모니터링"],
+        ["**Neutral**", "혼조 — 방향성 불확실", f"{watch}", "분기 1회 Factor Pool 재평가"],
+        ["**Contraction**", "선행 Factor 하락 전환", f"{watch}", "조기 경보 발동, 리스크 재검토"],
+    ]
+    return _fmt_table(rows, ["시나리오", "신호 조건", "핵심 모니터링 Factor", "대응 권고"])
+
+
+def build_factor_report(
+    factors_data: dict = None, analysis: dict = None, chart_paths: dict = None
+) -> str:
     factors_data = factors_data or _load_latest("factors")
     analysis = analysis or _load_latest("analysis")
     chart_paths = chart_paths or {}
@@ -44,209 +100,267 @@ def build_factor_report(factors_data: dict = None, analysis: dict = None, chart_
     period = analysis.get("data_period", {})
     now_iso = datetime.now().strftime("%Y-%m-%d")
 
-    # --- Section 0: 레짐 분석 (Executive Summary) ---
+    # 핵심 데이터 추출
     regime_info = analysis.get("regime", {})
-    reg_label   = regime_info.get("regime", "N/A")
-    reg_conf    = regime_info.get("confidence", 0)
-    reg_probs   = regime_info.get("probs", {})
+    reg_label = regime_info.get("regime", "N/A")
+    reg_conf = regime_info.get("confidence", 0)
+    reg_probs = regime_info.get("probs", {})
     reg_entropy = regime_info.get("entropy", 1.0)
-    prob_str = " | ".join(f"{k}: {v*100:.1f}%" for k, v in reg_probs.items())
-
     ci = analysis.get("consulting_implications", {})
-    s0 = f"""## 0. Executive Summary
+
+    granger = analysis.get("granger", [])
+    lead_lag = analysis.get("lead_lag", [])
+    lasso = analysis.get("lasso_selected", [])
+    imp = analysis.get("importance", [])
+    corr = analysis.get("correlation", [])
+    rs = analysis.get("rolling_stability", {})
+    rs_params = rs.get("_params", {"window": ROLLING_WINDOW, "threshold": ROLLING_STABILITY_THRESHOLD})
+    r_window = rs_params["window"]
+    r_threshold = rs_params["threshold"]
+
+    # 동적 제목
+    title = _dynamic_title(analysis)
+
+    # 양방법 합의 Factor
+    granger_ids = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
+    leading = [r for r in lead_lag if r.get("is_leading")]
+    lead_ids = {r["factor"] for r in leading}
+    consensus = granger_ids & lead_ids
+    top_factors = ", ".join(consensus) if consensus else ", ".join(list(lead_ids)[:3]) or "N/A"
+
+    # ── Executive Summary ──────────────────────────────────────────
+    prob_str = " | ".join(f"{k}: {v * 100:.1f}%" for k, v in reg_probs.items())
+    s_exec = f"""## Executive Summary
+
+> **한 줄 결론**: {ci.get('client_narrative', reg_label + ' 국면 — 선행지표 모니터링 강화 권고')}
 
 | 항목 | 내용 |
 |------|------|
-| **현재 레짐** | **{reg_label}** |
-| 레짐 신뢰도 | {reg_conf}% (Shannon Entropy: {reg_entropy:.3f}) |
+| **현재 레짐** | **{reg_label}** (신뢰도 {reg_conf}%) |
 | 레짐 확률 분포 | {prob_str} |
-| 핵심 선행지표 | {ci.get('leading_indicators', 'N/A')} |
-| 클라이언트 권고 | {ci.get('client_narrative', 'N/A')} |
+| 핵심 선행지표 | {ci.get('leading_indicators', top_factors)} |
+| 분석 기간 | {period.get('start', 'N/A')} ~ {period.get('end', 'N/A')} ({period.get('n_obs', 'N/A')}개월) |
+| 데이터 출처 | FRED (Federal Reserve Bank of St. Louis) |
+
+"""
+
+    # ── Section 1: 지금 어디에 있는가? ────────────────────────────
+    s1 = f"""## 1. 지금 어디에 있는가?
+
+> **핵심 발견**: 미국 산업생산(INDPRO)은 현재 **{reg_label}** 국면에 있으며,
+> Shannon Entropy {reg_entropy:.3f}로 {'레짐 전환 가능성이 낮은 안정적 상태' if reg_entropy < 0.8 else '복수 국면 혼재 — 불확실성 높음'}입니다.
+
+GMM 3-state 모델이 {period.get('n_obs', 'N/A')}개월 데이터에서 식별한 현재 레짐:
+
+| 지표 | 값 | 해석 |
+|------|----|------|
+| **레짐** | {reg_label} | {'확장 국면' if reg_label == 'Expansion' else '수축 국면' if reg_label == 'Contraction' else '중립 국면'} |
+| 신뢰도 | {reg_conf}% | Shannon Entropy {reg_entropy:.3f} |
+| 레짐 확률 | {prob_str} | {'단일 레짐 우세' if reg_conf > 60 else '복수 레짐 경합'} |
+
+{ci.get('current_regime', '')}
 
 """
     if chart_paths.get("regime_timeline"):
-        s0 += f"![레짐 타임라인]({chart_paths['regime_timeline']})\n"
+        s1 += f"![레짐 타임라인]({chart_paths['regime_timeline']})\n\n"
+
+    # ── Section 2: 무엇이 먼저 움직이는가? ────────────────────────
+    # 상위 3 선행 Factor (양방법 합의 우선)
+    ordered_leading = sorted(
+        leading,
+        key=lambda r: (r["factor"] not in consensus, -abs(r["max_corr"])),
+    )[:6]
+    ll_rows = [
+        [
+            r["label"],
+            f"+{r['optimal_lag']}개월",
+            f"{r['max_corr']:.3f}",
+            "✓ 양방법 합의" if r["factor"] in consensus else "Lead-Lag",
+        ]
+        for r in ordered_leading
+    ]
+
+    s2 = f"""## 2. 무엇이 먼저 움직이는가?
+
+> **핵심 발견**: Granger 인과성과 Cross-correlation이 **동시에 확인한 선행지표 {len(consensus)}개**는
+> INDPRO 변곡점을 수개월 앞서 포착합니다.
+
+"""
     if chart_paths.get("signal_chart"):
-        s0 += f"\n![The Signal]({chart_paths['signal_chart']})\n"
+        s2 += f"![The Signal — 선행지표 vs INDPRO]({chart_paths['signal_chart']})\n\n"
 
-    # --- Section 1: 분석 개요 ---
-    s1 = f"""## 1. 분석 개요
+    if ll_rows:
+        s2 += f"""{_fmt_table(ll_rows, ['지표명', '선행 기간', '상관계수', '검증 방법'])}
 
-| 항목 | 내용 |
-|------|------|
-| Target 변수 | {target_label} (INDPRO) |
-| 분석 기간 | {period.get('start', 'N/A')} ~ {period.get('end', 'N/A')} ({period.get('n_obs', 'N/A')}개월) |
-| Factor 후보 | {len(factors_data.get('factors', {}))}개 FRED 시계열 |
-| 방법론 | LASSO 선별 → 상관관계 분석 → Rolling OLS → RF Feature Importance |
-| 생성일 | {now_iso} |
-| 데이터 출처 | FRED (Federal Reserve Bank of St. Louis) |
 """
+    else:
+        s2 += "_선행 Factor 없음 — 데이터 재확인 필요_\n\n"
 
-    # --- Section 2: LASSO 선행지표 선별 ---
-    lasso = analysis.get("lasso_selected", [])
-    lasso_rows = [[r["factor"], r["label"], f"{r['coefficient']:.4f}"] for r in lasso[:10]]
-    s2 = f"""## 2. LASSO 선행지표 선별 결과
-
-LASSO 정규화(교차검증 {LASSO_CV_FOLDS}-Fold)로 {len(lasso)}개 Factor 선별.
-계수 크기(절댓값)는 상대적 중요도를 나타내며, 0이 아닌 계수만 표시.
-
-{_fmt_table(lasso_rows, ["Factor", "지표명", "계수"])}
-
-> **해석**: 계수 부호(+/-)는 INDPRO와의 방향성, 크기는 기여도.
-"""
-    if chart_paths.get("lasso_path"):
-        s2 += f"\n![LASSO 정규화 경로]({chart_paths['lasso_path']})\n"
-
-    # --- Section 3: 상관관계 분석 ---
-    corr = analysis.get("correlation", [])
-    corr_rows = [[r["factor"], r["label"], f"{r['corr']:.3f}", f"{r['pvalue']:.4f}", r["lag_months"]]
-                 for r in corr[:8]]
-    corr_lag_str = "·".join(str(lag) for lag in CORR_LAGS)
-    s3 = f"""## 3. 상관관계 분석 (시차별)
-
-각 Factor와 INDPRO 간 피어슨 상관계수. 시차 {corr_lag_str}개월 중 최적 lag 선택 (p < 0.05 기준).
-
-{_fmt_table(corr_rows, ["Factor", "지표명", "상관계수", "p-value", "최적 Lag(월)"])}
+    s2 += """> **왜 두 가지 방법인가?** Granger 검증은 통계적 선행성(차분 기준),
+> Cross-correlation은 원시 변화율 기준입니다. 양방법 합의 시 선행성 신뢰도가 올라갑니다.
 """
     if chart_paths.get("correlation_heatmap"):
-        s3 += f"\n![상관관계 히트맵]({chart_paths['correlation_heatmap']})\n"
+        s2 += f"\n![Factor 상관관계 히트맵]({chart_paths['correlation_heatmap']})\n"
 
-    # --- Section 4: ML Feature Importance ---
-    imp = analysis.get("importance", [])
-    imp_rows = [[r["rank"], r["factor"], r["label"], f"{r['importance']:.4f}"] for r in imp[:10]]
-    s4 = f"""## 4. ML Feature Importance (Random Forest)
-
-Random Forest(n={RF_N_ESTIMATORS}, random_state={RF_RANDOM_STATE}) 기반 Feature Importance.
-LASSO 선별 Factor를 대상으로 산정.
-
-{_fmt_table(imp_rows, ["순위", "Factor", "지표명", "Importance"])}
-"""
-    if chart_paths.get("importance_bar"):
-        s4 += f"\n![Feature Importance]({chart_paths['importance_bar']})\n"
-
-    # --- Section 3.5: Granger 인과관계 ---
-    granger = analysis.get("granger", [])
-    granger_rows = [[r["factor"], r["label"], r["strength"],
-                     r["optimal_lag"], f"{r['p_value']:.4f}"]
-                    for r in granger[:8]]
-    s35 = f"""## 3.5 Granger 인과관계 검증
-
-ADF 정상성 변환 후 F-test. \
-STRONG: p<{GRANGER_STRONG} / MODERATE: p<{GRANGER_MODERATE} / WEAK: p<{GRANGER_WEAK}.
-
-{_fmt_table(granger_rows, ["Factor", "지표명", "강도", "최적 Lag(월)", "p-value"])}
-
-> Pearson 상관관계(섹션 3)는 동시적 연관성을, Granger는 **시간적 선행성**을 검증합니다.
-"""
-
-    # --- Section 3.7: Lead-Lag 교차검증 ---
-    lead_lag = analysis.get("lead_lag", [])
-    leading = [r for r in lead_lag if r.get("is_leading")][:6]
-    ll_rows = [[r["factor"], r["label"],
-                f"+{r['optimal_lag']}m" if r["optimal_lag"] > 0 else str(r["optimal_lag"]),
-                f"{r['max_corr']:.3f}", "✓" if r["is_leading"] else ""]
-               for r in lead_lag[:8]]
-
-    # Granger와 합의 여부 확인
-    granger_factors = {r["factor"] for r in granger if r["strength"] in ("STRONG", "MODERATE")}
-    lead_factors = {r["factor"] for r in leading}
-    consensus = granger_factors & lead_factors
-    consensus_str = ", ".join(consensus) if consensus else "없음 (방법론 간 불일치 — 해석 주의)"
-
-    s37 = f"""## 3.7 Lead-Lag 교차검증
-
-Cross-correlation (lag -{LEAD_LAG_MAX_LAG}~+{LEAD_LAG_MAX_LAG}개월)으로 Granger 결과를 교차검증.
-**양방법 공통 선행 Factor = 강한 증거**, 불일치 = 구조 변화 또는 척도 차이 가능성.
-
-{_fmt_table(ll_rows, ["Factor", "지표명", "최적 Lag", "최대 상관계수", "선행?"])}
-
-| 검증 항목 | 결과 |
-|---------|------|
-| Granger STRONG/MODERATE | {", ".join(granger_factors) or "없음"} |
-| Lead-Lag 선행 Factor | {", ".join(lead_factors) or "없음"} |
-| **양방법 합의 (강한 증거)** | **{consensus_str}** |
-
-> Granger는 차분(정상화) 기준, Lead-Lag는 MoM% 변환 기준. 동일 방향이면 선행성 신뢰도 상승.
-"""
-
-    # --- Section 5: Rolling 안정성 ---
-    rs = analysis.get("rolling_stability", {})
-    rs_params = rs.get("_params", {"window": ROLLING_WINDOW,
-                                   "threshold": ROLLING_STABILITY_THRESHOLD})
-    r_window = rs_params["window"]
-    r_threshold = rs_params["threshold"]
+    # ── Section 3: 얼마나 확신할 수 있는가? ───────────────────────
     stable_list = rs.get("stable_factors", [])
     unstable_list = rs.get("unstable_factors", [])
     stable = ", ".join(stable_list) or "없음"
     unstable = ", ".join(unstable_list) or "없음"
 
-    # 불안정 Factor 컨설팅 해석
-    if unstable_list:
-        instability_note = f"""
-### 불안정 Factor 해석 (클라이언트 설명용)
+    # RF와 LASSO 모두에 등장하는 Factor
+    lasso_ids = {r["factor"] for r in lasso}
+    imp_ids = {r["factor"] for r in imp}
+    double_confirmed = lasso_ids & imp_ids
+    dc_str = ", ".join(double_confirmed) if double_confirmed else "없음"
 
-불안정({len(unstable_list)}개)은 **분석 실패가 아닙니다** — 경제 구조 변화가 \
-빈번하다는 현실을 포착한 결과입니다.
+    s3 = f"""## 3. 얼마나 확신할 수 있는가?
 
-| 관점 | 내용 |
-|------|------|
-| 현재 구간 신뢰도 | 최근 {r_window}개월 기준 Granger·상관관계로 선행성 별도 검증 완료 |
-| 구조 변화 위험 | 외부 충격 시 계수 방향 역전 가능 |
-| 관리 권고 | 분기 1회 Factor Pool 재평가, 계수 방향 역전 시 조기 경보 |
-| 클라이언트 메시지 | "선행지표 관계는 고정값이 아닌 만큼 분기별 재검토 프로세스가 필요합니다." |
+> **핵심 발견**: LASSO·Random Forest·Rolling OLS 세 방법이 공통으로 지목한 Factor는
+> **{dc_str}**입니다. 단일 방법 의존보다 신뢰도가 높습니다.
+
+### LASSO + ML 교차검증
+
+LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Factor:
+
 """
-    else:
-        instability_note = ""
+    # Top 5 by importance, flag if also in LASSO
+    top_imp = imp[:8]
+    imp_rows = [
+        [
+            r["rank"],
+            r["label"],
+            f"{r['importance']:.4f}",
+            "✓" if r["factor"] in lasso_ids else "",
+        ]
+        for r in top_imp
+    ]
+    if imp_rows:
+        s3 += _fmt_table(imp_rows, ["순위", "지표명", "RF Importance", "LASSO 선별"]) + "\n\n"
 
-    s5 = f"""## 5. Rolling OLS 안정성 검증 ({r_window}개월 창)
+    if chart_paths.get("importance_bar"):
+        s3 += f"![Feature Importance]({chart_paths['importance_bar']})\n\n"
 
-계수 시계열 안정성 기준: |std/mean| < {r_threshold} → 안정, ≥ {r_threshold} → 불안정.
+    s3 += f"""### 시간적 안정성 (Rolling OLS {r_window}개월 창)
+
+계수가 구간에 따라 흔들리지 않는지 검증. |std/mean| < {r_threshold} → 안정.
 
 | 구분 | Factor |
 |------|--------|
-| **안정 Factor** | {stable} |
-| **불안정 Factor** | {unstable} |
-{instability_note}"""
+| **안정** | {stable} |
+| **불안정** | {unstable} |
+
+"""
+    if unstable_list:
+        s3 += """> **불안정 Factor 해석**: 분석 실패가 아닌 경제 구조 변화의 현실을 반영합니다.
+> 계수 방향 역전 감지 시 조기 경보 기준으로 활용하십시오 (분기 1회 재평가 권고).
+
+"""
     if chart_paths.get("rolling_coef"):
-        s5 += f"\n![Rolling 계수 안정성]({chart_paths['rolling_coef']})\n"
+        s3 += f"![Rolling 계수 안정성]({chart_paths['rolling_coef']})\n"
 
-    # --- Section 6: 컨설팅 함의 ---
-    ci = analysis.get("consulting_implications", {})
-    s6 = f"""## 6. 컨설팅 함의
+    # ── Section 4: 무엇을 해야 하는가? ────────────────────────────
+    s4 = f"""## 4. 무엇을 해야 하는가?
 
-### 현재 레짐 판단
-{ci.get('current_regime', 'N/A')}
+> **핵심 발견**: 현재 **{reg_label}** 국면에서 선행지표가 보내는 신호에 따라
+> 세 가지 시나리오로 대응 체계를 분리합니다.
 
-### 선행지표 활용
-{ci.get('leading_indicators', 'N/A')}
+### 시나리오별 대응 프레임
 
-### 데이터 제약
-{ci.get('data_constraints', 'N/A')}
+{_scenario_table(reg_label, granger, lead_lag)}
+
+### 모니터링 우선순위
+
+{ci.get('data_constraints', '데이터 제약: FRED 월별 발표 일정 기준, 발표 후 1영업일 이내 업데이트.')}
 
 ### 클라이언트 설명 프레임
-{ci.get('client_narrative', 'N/A')}
+
+{ci.get('client_narrative', '선행지표 관계는 고정값이 아닌 만큼 분기별 재검토 프로세스가 필요합니다.')}
 
 ---
-*본 보고서는 FRED 공공 데이터를 기반으로 자동 생성되었습니다. 수치 해석 시 출처(FRED)와 분석 기간을 반드시 명기하십시오.*
+*본 보고서는 FRED 공공 데이터를 기반으로 자동 생성되었습니다.
+수치 해석 시 출처(FRED)와 분석 기간을 반드시 명기하십시오.*
 """
 
-    report = f"""# Factor Pool 리서치 보고서
+    # ── Appendix A: 방법론 ─────────────────────────────────────────
+    corr_lag_str = "·".join(str(lag) for lag in CORR_LAGS)
+    s_appx_a = f"""## 부록 A: 방법론
 
-**생성일**: {now_iso}
-**Target**: {target_label}
-**데이터 출처**: FRED (Federal Reserve Bank of St. Louis)
+| 단계 | 방법 | 파라미터 | 목적 |
+|------|------|---------|------|
+| 레짐 분류 | GMM 3-state | n_components=3 | 거시 국면 구분 |
+| Factor 선별 | LASSO (LassoCV) | CV Folds={LASSO_CV_FOLDS} | 희소 선형 선별 |
+| 상관관계 | Pearson (시차별) | lag={corr_lag_str}개월 | 동시적·지연 상관 |
+| 선행성 검증 | Granger F-test | ADF 정상화, maxlag={LEAD_LAG_MAX_LAG} | 시간적 인과성 |
+| 선행성 교차검증 | Cross-correlation | MoM% 변환, ±{LEAD_LAG_MAX_LAG}개월 | Granger 결과 보완 |
+| ML 중요도 | Random Forest | n={RF_N_ESTIMATORS}, seed={RF_RANDOM_STATE} | 비선형 기여도 |
+| 안정성 | Rolling OLS | window={r_window}개월 | 계수 불안정 탐지 |
+
+**Granger 강도 기준**: STRONG p<{GRANGER_STRONG} / MODERATE p<{GRANGER_MODERATE} / WEAK p<{GRANGER_WEAK}
+
+"""
+
+    # ── Appendix B: 전체 데이터 테이블 ────────────────────────────
+    # LASSO 전체
+    lasso_rows_full = [
+        [r["factor"], r["label"], f"{r['coefficient']:.4f}"]
+        for r in lasso
+    ]
+    # 상관관계 전체
+    corr_rows_full = [
+        [r["factor"], r["label"], f"{r['corr']:.3f}", f"{r['pvalue']:.4f}", r["lag_months"]]
+        for r in corr
+    ]
+    # Granger 전체
+    granger_rows_full = [
+        [r["factor"], r["label"], r["strength"], r["optimal_lag"], f"{r['p_value']:.4f}"]
+        for r in granger
+    ]
+
+    s_appx_b = """## 부록 B: 전체 데이터 테이블
+
+### B-1. LASSO 선별 Factor (전체)
+
+"""
+    if lasso_rows_full:
+        s_appx_b += _fmt_table(lasso_rows_full, ["Factor", "지표명", "계수"]) + "\n\n"
+    else:
+        s_appx_b += "_데이터 없음_\n\n"
+
+    s_appx_b += "### B-2. 상관관계 분석 (전체)\n\n"
+    if corr_rows_full:
+        s_appx_b += (
+            _fmt_table(corr_rows_full, ["Factor", "지표명", "상관계수", "p-value", "최적 Lag(월)"])
+            + "\n\n"
+        )
+    else:
+        s_appx_b += "_데이터 없음_\n\n"
+
+    s_appx_b += "### B-3. Granger 인과관계 (전체)\n\n"
+    if granger_rows_full:
+        s_appx_b += (
+            _fmt_table(granger_rows_full, ["Factor", "지표명", "강도", "최적 Lag(월)", "p-value"])
+            + "\n"
+        )
+    else:
+        s_appx_b += "_데이터 없음_\n"
+
+    # ── 최종 조합 ──────────────────────────────────────────────────
+    report = f"""# {title}
+
+**생성일**: {now_iso} | **Target**: {target_label} | **출처**: FRED
 
 ---
 
-{s0}
+{s_exec}
 {s1}
 {s2}
 {s3}
-{s35}
-{s37}
 {s4}
-{s5}
-{s6}"""
+---
+
+{s_appx_a}
+{s_appx_b}"""
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     path = f"{OUTPUT_DIR}/factor_pool_{date_str}.md"

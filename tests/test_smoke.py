@@ -85,3 +85,33 @@ def test_lead_lag(mock_Xy, mock_factors_data):
     result = run_lead_lag(X, y, mock_factors_data)
     assert len(result) == len(X.columns)
     assert all("is_leading" in r for r in result)
+
+
+def test_build_factor_report(tmp_path, mock_factors_data):
+    """build_factor_report가 mock 분석 데이터로 MD 파일을 생성하는지 확인."""
+    from src.report import build_factor_report
+    import src.report as rep_module
+
+    mock_analysis = {
+        "data_period": {"start": "2000-01", "end": "2010-01", "n_obs": 120},
+        "regime": {"regime": "Neutral", "confidence": 60, "probs": {"Neutral": 0.6}, "entropy": 0.7},
+        "lasso_selected": [{"factor": "T10Y2Y", "label": "Yield Spread", "coefficient": 0.3}],
+        "correlation": [{"factor": "T10Y2Y", "label": "Yield Spread", "corr": 0.5, "pvalue": 0.01, "lag_months": 3}],
+        "granger": [{"factor": "T10Y2Y", "label": "Yield Spread", "strength": "STRONG", "optimal_lag": 3, "p_value": 0.005, "f_statistic": 8.2}],
+        "lead_lag": [{"factor": "T10Y2Y", "label": "Yield Spread", "optimal_lag": 3, "max_corr": 0.5, "zero_corr": 0.3, "is_leading": True}],
+        "importance": [{"rank": 1, "factor": "T10Y2Y", "label": "Yield Spread", "importance": 0.45}],
+        "rolling_stability": {"stable_factors": ["T10Y2Y"], "unstable_factors": [], "_params": {"window": 36, "threshold": 0.5}},
+        "consulting_implications": {"current_regime": "중립 국면", "leading_indicators": "T10Y2Y", "data_constraints": "없음", "client_narrative": "테스트"},
+    }
+
+    orig_dir = rep_module.OUTPUT_DIR
+    rep_module.OUTPUT_DIR = str(tmp_path)
+    try:
+        path = build_factor_report(mock_factors_data, mock_analysis)
+        assert path.endswith(".md")
+        content = open(path, encoding="utf-8").read()
+        assert "지금 어디에 있는가" in content
+        assert "무엇이 먼저 움직이는가" in content
+        assert "부록 A" in content
+    finally:
+        rep_module.OUTPUT_DIR = orig_dir

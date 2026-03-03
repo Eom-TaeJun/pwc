@@ -9,7 +9,8 @@
 | 데이터 수집 | `src/collect.py` |
 | 분석 패키지 | `src/analyze/` (io · lasso · correlation · rolling · importance · regime · granger · lead_lag) |
 | 차트 생성 | `src/chart.py` |
-| 보고서 생성 | `src/report.py` |
+| 보고서 생성 | `src/report.py` (PwC 컨설팅 스타일 — 운영 버전) |
+| 보고서 비교용 | `src/report_classic.py` (구 애널리스트 스타일 — 비활성, 비교 참조만) |
 | 출력 루트 | `outputs/` (gitignore) |
 
 ## NEVER — 절대 금지
@@ -19,6 +20,8 @@
 - **NEVER** `src/analyze/` 파일을 단일 파일로 병합 (각 모듈 60줄 이하 유지)
 - **NEVER** PDF 변환, 웹 대시보드 추가 (Markdown + PNG만)
 - **NEVER** `.claude/skills/` 파일 수정 (읽기 전용 도메인 지식)
+- **NEVER** `report_classic.py`를 `main.py` 또는 다른 모듈에서 임포트 (비교용 파일, 파이프라인 외)
+- **NEVER** MCP 서버 추가 (공급망 보안 위험 — tool poisoning / prompt injection 경로)
 
 ## MUST — 반드시 준수
 
