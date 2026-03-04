@@ -26,11 +26,29 @@ PwC 오퍼레이션 컨설팅 RA 포트폴리오를 위한 **실전급 Factor �
 "수치를 나열하는 대신, 클라이언트의 의사결정에 어떤 영향을 주는지 '함의'를 먼저 제시한다."
 - 예: "현재 레짐은 Expansion이지만, 선행지표인 FEDFUNDS가 상승 반전했으므로 3개월 내 재고 감축 준비를 권고한다."
 
+## 🏗️ Harness Architecture (Follow This Pattern)
+
+이 프로젝트는 Anthropic 공식 플러그인 패턴(financial-services-plugins 기준)을 따른다.
+새 기능을 추가할 때 반드시 아래 레이어에 올바르게 배치하라:
+
+| 레이어 | 위치 | 역할 | 핵심 규칙 |
+|-------|------|------|---------|
+| **데이터** | `src/*.py` | 수치 계산, JSON 추출만 | 마크다운·해석·판단 없음 |
+| **지식** | `.claude/skills/*/SKILL.md` | 도메인 지식, 해석 기준 | 코드 없음; 상세는 `references/`로 분리 |
+| **에이전트** | `.claude/agents/*.md` | 자율 실행, Skills 조합 | `user-invocable: false` = 자동 활성화 |
+| **커맨드** | `commands/*.md` | 슬래시 진입점, 흐름 제어 | Skills/Agents 호출 지시 포함 |
+| **훅** | `.claude/settings.json` | 자동화 가드레일 | SessionStart·Stop·PreToolUse |
+| **매니페스트** | `.claude-plugin/plugin.json` | 플러그인 메타데이터 | 버전 변경 시 갱신 |
+
+**핵심 원칙**: 지능은 Skills에 → 데이터는 Python에 → 조율은 Agents에.
+**SKILL.md 크기**: 핵심 지침만 (~100줄), 상세 내용은 `references/` 서브파일로 분리.
+
 ## 🚫 Critical Constraints (Never)
 - **NEVER** `outputs/` 외부 저장 금지
 - **NEVER** `.env` API KEY 노출 금지
 - **NEVER** `src/analyze/` 모듈당 60줄 초과 금지 (모듈성 유지)
 - **NEVER** MCP 서버 추가 금지 (보안 정책)
+- **NEVER** `SKILL.md`에 200줄 이상 작성 금지 — `references/` 서브파일로 분리
 
 ## ✅ Mandatory (Must)
 - **MUST** 모든 수치에 FRED 출처 명기
