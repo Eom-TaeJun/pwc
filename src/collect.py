@@ -22,6 +22,7 @@ SERIES_META = {
     "DEXUSEU": {"label": "USD/EUR 환율", "transform": "level"},
     "DCOILWTICO": {"label": "WTI 유가 MoM%", "transform": "mom"},
     "VIXCLS": {"label": "VIX 변동성지수", "transform": "level"},
+    "TCU": {"label": "설비가동률(%)", "transform": "level"},
 }
 
 def fetch_fred_series(series_id: str, start: str = "2000-01-01") -> list:

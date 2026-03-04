@@ -12,7 +12,8 @@
 |------|------|
 | **현재 레짐** | **고모멘텀** (Expansion, 신뢰도 37.4%) |
 | 레짐 확률 분포 | Neutral: 44.8% | Contraction: 0.0% | Expansion: 55.2% |
-| 핵심 선행지표 | FEDFUNDS가 INDPRO 6개월 선행 (Granger STRONG) |
+| **레짐 모멘텀** | ▲ 안정 Expansion (최근 6개월 중 4회) (`E → N → E → N → E → E`) |
+| **선행지표 현재 신호** | Fed Funds Rate ↓(6M 선행), 실업률 ↓(7M 선행), 비농업고용 MoM 증감(천명) ↑(11M 선행) |
 | 분석 기간 | 2000-02-01 ~ 2025-11-01 (309개월) |
 | 데이터 출처 | FRED (Federal Reserve Bank of St. Louis) |
 
@@ -43,7 +44,7 @@ Expansion (신뢰도 37.4%)
 
 ## 2. 무엇이 먼저 움직이는가?
 
-> **핵심 발견**: **Granger 인과성 검증**에서 Fed Funds Rate 등 **12개 Factor**가 INDPRO를 앞서 움직임을 확인했습니다. Cross-correlation 최적 Lag가 음수(−)로 나타나는 경우는 Granger 인과 방향(Factor→INDPRO)과 다른 방향, 즉 INDPRO 변화에 대한 정책·지표의 **반응 함수**를 포착한 피드백 루프입니다.
+> **핵심 발견**: **Granger 인과성 검증**에서 Fed Funds Rate 등 **13개 Factor**가 INDPRO를 앞서 움직임을 확인했습니다. Cross-correlation 최적 Lag가 음수(−)로 나타나는 경우는 Granger 인과 방향(Factor→INDPRO)과 다른 방향, 즉 INDPRO 변화에 대한 정책·지표의 **반응 함수**를 포착한 피드백 루프입니다.
 
 | 지표명 | Granger 선행 | 강도 | Cross-corr Lag |
 | --- | --- | --- | --- |
@@ -63,7 +64,7 @@ Expansion (신뢰도 37.4%)
 ## 3. 얼마나 확신할 수 있는가?
 
 > **핵심 발견**: LASSO·Random Forest·Rolling OLS 세 방법이 공통으로 지목한 Factor는
-> **PAYEMS, VIXCLS, DCOILWTICO, PPIACO, UNRATE, M2SL, DGS2, RETAILSMNSA, HOUST, DEXUSEU, UMCSENT, DGS10**입니다. 단일 방법 의존보다 신뢰도가 높습니다.
+> **PAYEMS, RETAILSMNSA, DEXUSEU, VIXCLS, TCU, M2SL, PPIACO, DCOILWTICO, DGS2, HOUST, UMCSENT, DGS10, UNRATE**입니다. 단일 방법 의존보다 신뢰도가 높습니다.
 
 ### LASSO + ML 교차검증
 
@@ -71,14 +72,14 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 
 | 순위 | 지표명 | RF Importance | LASSO 선별 |
 | --- | --- | --- | --- |
-| 1 | 비농업고용 MoM 증감(천명) | 0.2666 | ✓ |
-| 2 | M2 통화량 MoM% | 0.2268 | ✓ |
-| 3 | 실업률 | 0.1194 | ✓ |
-| 4 | 주택착공 MoM% | 0.1046 | ✓ |
-| 5 | WTI 유가 MoM% | 0.0627 | ✓ |
-| 6 | PPI MoM% | 0.0449 | ✓ |
-| 7 | 2Y Treasury Yield | 0.0418 | ✓ |
-| 8 | 소매판매 MoM% | 0.0357 | ✓ |
+| 1 | 비농업고용 MoM 증감(천명) | 0.2490 | ✓ |
+| 2 | M2 통화량 MoM% | 0.2084 | ✓ |
+| 3 | 실업률 | 0.1197 | ✓ |
+| 4 | 주택착공 MoM% | 0.1054 | ✓ |
+| 5 | WTI 유가 MoM% | 0.0671 | ✓ |
+| 6 | PPI MoM% | 0.0477 | ✓ |
+| 7 | 설비가동률(%) | 0.0419 | ✓ |
+| 8 | 2Y Treasury Yield | 0.0406 | ✓ |
 
 ![Feature Importance](outputs/charts/importance_bar_20260304.png)
 
@@ -89,7 +90,15 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | 구분 | Factor |
 |------|--------|
 | **안정** | 없음 |
-| **불안정** | PAYEMS, UNRATE, HOUST, VIXCLS, DGS2 |
+| **불안정** | PAYEMS, UNRATE, HOUST, VIXCLS, M2SL |
+
+| Factor | |std/mean| (CV) | 판정 |
+| --- | --- | --- |
+| 비농업고용 MoM 증감(천명) | 1.133 | ✗ 불안정 |
+| M2 통화량 MoM% | 1.384 | ✗ 불안정 |
+| 주택착공 MoM% | 1.416 | ✗ 불안정 |
+| 실업률 | 2.775 | ✗ 불안정 |
+| VIX 변동성지수 | 4.156 | ✗ 불안정 |
 
 > **불안정 Factor 해석**: 분석 실패가 아닌 경제 구조 변화의 현실을 반영합니다.
 > 계수 방향 역전 감지 시 조기 경보 기준으로 활용하십시오 (분기 1회 재평가 권고).
@@ -99,14 +108,27 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 
 > **핵심 발견**: 현재 **고모멘텀(Expansion)** 국면에서 선행지표가 보내는 신호에 따라
 > 세 가지 시나리오로 대응 체계를 분리합니다.
+> 레짐 모멘텀: ▲ 안정 Expansion (최근 6개월 중 4회)
+
+### 선행지표 현재 방향 신호
+
+| 선행지표 | Lag | 현재 방향 | 시나리오 함의 |
+| --- | --- | --- | --- |
+| Fed Funds Rate | +6M | ↓ | Neutral 전환 경계 |
+| 실업률 | +7M | ↓ | Neutral 전환 경계 |
+| 비농업고용 MoM 증감(천명) | +11M | ↑ | Expansion 지속 신호 |
+| M2 통화량 MoM% | +5M | ↑ | Expansion 지속 신호 |
+| WTI 유가 MoM% | +1M | ↑ | Expansion 지속 신호 |
+
+> ↑ = 최근 3개월 상승 추세 / ↓ = 하락 추세 (Factor 원래 단위 기준)
 
 ### 시나리오별 대응 프레임
 
 | 시나리오 | 신호 조건 | 핵심 모니터링 Factor(주기) | 대응 권고 |
 | --- | --- | --- | --- |
-| **Expansion** | 선행 Factor 지속 상승 | 비농업고용 MoM 증감(천명)(분기) / CPI YoY%(매월) / VIX 변동성지수(매월) | 현 포지션 유지, 레짐 전환 신호 모니터링 |
-| **Neutral** | 혼조 — 방향성 불확실 | 비농업고용 MoM 증감(천명)(분기) / CPI YoY%(매월) / VIX 변동성지수(매월) | 분기 1회 Factor Pool 전체 재평가 |
-| **Contraction** | 선행 Factor 하락 전환 | 비농업고용 MoM 증감(천명)(분기) / CPI YoY%(매월) / VIX 변동성지수(매월) | 조기 경보 발동, 클라이언트 리스크 재검토 |
+| **Expansion** | 선행 Factor 지속 상승 | 비농업고용 MoM 증감(천명)(분기) / VIX 변동성지수(매월) / 설비가동률(%)(분기) | 현 포지션 유지, 레짐 전환 신호 모니터링 |
+| **Neutral** | 혼조 — 방향성 불확실 | 비농업고용 MoM 증감(천명)(분기) / VIX 변동성지수(매월) / 설비가동률(%)(분기) | 분기 1회 Factor Pool 전체 재평가 |
+| **Contraction** | 선행 Factor 하락 전환 | 비농업고용 MoM 증감(천명)(분기) / VIX 변동성지수(매월) / 설비가동률(%)(분기) | 조기 경보 발동, 클라이언트 리스크 재검토 |
 
 ### 모니터링 우선순위
 
@@ -153,18 +175,19 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 
 | Factor | 지표명 | 계수 |
 | --- | --- | --- |
-| PAYEMS | 비농업고용 MoM 증감(천명) | 0.8052 |
-| UNRATE | 실업률 | 0.2204 |
-| HOUST | 주택착공 MoM% | 0.1597 |
-| VIXCLS | VIX 변동성지수 | -0.0701 |
-| DGS2 | 2Y Treasury Yield | 0.0662 |
-| RETAILSMNSA | 소매판매 MoM% | 0.0549 |
-| M2SL | M2 통화량 MoM% | -0.0540 |
-| PPIACO | PPI MoM% | 0.0343 |
-| UMCSENT | 미시간 소비자심리 | 0.0280 |
-| DGS10 | 10Y Treasury Yield | 0.0179 |
-| DEXUSEU | USD/EUR 환율 | -0.0172 |
-| DCOILWTICO | WTI 유가 MoM% | 0.0097 |
+| PAYEMS | 비농업고용 MoM 증감(천명) | 0.7992 |
+| UNRATE | 실업률 | 0.2438 |
+| HOUST | 주택착공 MoM% | 0.1593 |
+| VIXCLS | VIX 변동성지수 | -0.0649 |
+| M2SL | M2 통화량 MoM% | -0.0571 |
+| RETAILSMNSA | 소매판매 MoM% | 0.0543 |
+| DGS2 | 2Y Treasury Yield | 0.0532 |
+| TCU | 설비가동률(%) | 0.0430 |
+| DEXUSEU | USD/EUR 환율 | -0.0347 |
+| PPIACO | PPI MoM% | 0.0309 |
+| DGS10 | 10Y Treasury Yield | 0.0182 |
+| UMCSENT | 미시간 소비자심리 | 0.0180 |
+| DCOILWTICO | WTI 유가 MoM% | 0.0164 |
 
 ### B-2. 상관관계 분석 (전체)
 
@@ -176,6 +199,7 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | HOUST | 주택착공 MoM% | 0.360 | 0.0000 | 0 |
 | PPIACO | PPI MoM% | 0.280 | 0.0000 | 0 |
 | VIXCLS | VIX 변동성지수 | -0.239 | 0.0000 | 0 |
+| TCU | 설비가동률(%) | -0.189 | 0.0011 | 12 |
 | UNRATE | 실업률 | 0.181 | 0.0014 | 3 |
 | RETAILSMNSA | 소매판매 MoM% | 0.146 | 0.0102 | 0 |
 | FEDFUNDS | Fed Funds Rate | -0.117 | 0.0442 | 12 |
@@ -193,11 +217,48 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | DGS2 | 2Y Treasury Yield | STRONG | 2 | < 0.0001 |
 | PPIACO | PPI MoM% | STRONG | 1 | < 0.0001 |
 | DGS10 | 10Y Treasury Yield | STRONG | 1 | 0.0001 |
+| TCU | 설비가동률(%) | STRONG | 10 | 0.0016 |
 | RETAILSMNSA | 소매판매 MoM% | MODERATE | 12 | 0.0114 |
 | UMCSENT | 미시간 소비자심리 | MODERATE | 2 | 0.0225 |
 | CPIAUCSL | CPI YoY% | MODERATE | 1 | 0.0376 |
 | DEXUSEU | USD/EUR 환율 | WEAK | 7 | 0.0626 |
 | HOUST | 주택착공 MoM% | WEAK | 2 | 0.0814 |
+
+## 부록 C: 현재 사이클 집중 분석
+
+> **분석 기간**: 2000-02 ~ 2025-11 (309개월)
+> **방법**: ruptures PELT (rbf), pen=15.0, min_size=6개월
+> Granger maxlag=6, Rolling 창=24개월.
+>
+> 고정 캘린더 창(예: "최근 60개월") 대신 **PELT 구조 변화 탐지로 정의된 현재 사이클 세그먼트**를 분석합니다.
+> 개별 기업 분석 시에도 동일한 원리 적용: 협업 발표·사업 모델 전환 이벤트 전후로 세그먼트를 분리합니다.
+
+### C-1. Granger 선행성 — 장기 vs 현재 사이클 비교
+
+| 구분 | Factor(지표명) | 컨설팅 함의 |
+| --- | --- | --- |
+| 지속 선행 (양기간 공통) | 비농업고용 MoM 증감(천명), VIX 변동성지수, 설비가동률(%), M2 통화량 MoM%, PPI MoM%, CPIAUCSL, WTI 유가 MoM%, 2Y Treasury Yield, Fed Funds Rate, 미시간 소비자심리, 10Y Treasury Yield, 실업률 | 구조적 선행 — 높은 신뢰도 |
+| 현 사이클 부상 | 없음 | 현 사이클 특이 요인 — 추적 강화 |
+| 현 사이클 약화 | 소매판매 MoM% | 관계 소멸 가능 — 재검증 필요 |
+
+### C-2. LASSO 선별 — 장기 vs 현재 사이클 비교
+
+| 구분 | Factor(지표명) | 컨설팅 함의 |
+| --- | --- | --- |
+| 지속 선별 (양기간 공통) | 비농업고용 MoM 증감(천명), 소매판매 MoM%, USD/EUR 환율, VIX 변동성지수, 설비가동률(%), M2 통화량 MoM%, PPI MoM%, WTI 유가 MoM%, 2Y Treasury Yield, 주택착공 MoM%, 미시간 소비자심리, 10Y Treasury Yield, 실업률 | 장단기 모두 유효 |
+| 현 사이클 부상 | 없음 | 현 사이클 특이 요인 |
+| 현 사이클 약화 | 없음 | 역할 약화 — 모니터링 축소 검토 |
+
+### C-3. 현재 사이클 Rolling OLS 안정성 (24개월 창)
+
+| 구분 | Factor |
+|------|--------|
+| **안정** | 없음 |
+| **불안정** | PAYEMS, UNRATE, HOUST, VIXCLS, M2SL |
+
+> **해석 지침**: 장기에서 안정 → 현재 사이클에서 불안정으로 전환된 Factor는
+> 구조 변화의 전형적 신호입니다. 현재 사이클에서 새로 안정화된 Factor가
+> 이번 사이클의 실질 선행지표 후보입니다.
 
 
 ## 부록 D: Company Event × 매크로 레짐 연동 분석
@@ -238,4 +299,48 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
   독립적인 기업 특유 구조 변화임.
 - **방법론 한계**: GMM은 INDPRO MoM%를 기준으로 학습. 주가 수익률과의 직접 Granger
   검증은 미구현(향후 확장 가능). 현재 레짐 오버레이는 **배경 조건 확인** 수준.
+
+
+## 부록 E: 멀티관점 토론 (Multi-Perspective Debate)
+
+> **설계 원칙** (spec.md Section 7): 동일 분석 데이터를 3관점에서 독립 해석.
+> 공통 신호 = 강한 증거 / 불일치 = 구조 변화 리스크로 클라이언트에 전달.
+
+### E-1. 관점별 결론
+
+| 관점 | 결론 |
+| --- | --- |
+| 매크로 관점 | 🟡 Expansion 우세 (일부 역신호) |
+| 실물경제 관점 | 🟢 Expansion 지속 |
+| 비용·심리 관점 | ⚪ 혼조 (방향 불명확) |
+
+**종합 합의**: ⚠️ **Moderate Confidence** — 2관점 Expansion, 1관점 역신호
+
+### E-2. Factor별 상세 신호
+
+| 관점 | Factor | 현재값 | 방향(Exp 정합) | Granger 강도 |
+| --- | --- | --- | --- | --- |
+| 매크로 관점 | Fed Funds Rate | 3.64 | ↓ (✓) | STRONG |
+| 매크로 관점 | 10Y-2Y Yield Spread | 0.65 | ↑ (✓) | — |
+| 매크로 관점 | 10Y Treasury Yield | 4.13 | ↓ (✗) | STRONG |
+| 실물경제 관점 | 비농업고용 MoM 증감(천명) | 130.00 | ↑ (✓) | STRONG |
+| 실물경제 관점 | 실업률 | 4.30 | ↓ (✓) | STRONG |
+| 실물경제 관점 | 소매판매 MoM% | -0.35 | ↑ (✓) | MODERATE |
+| 비용·심리 관점 | WTI 유가 MoM% | 3.57 | ↑ (✗) | STRONG |
+| 비용·심리 관점 | PPI MoM% | 0.27 | ↓ (✓) | STRONG |
+| 비용·심리 관점 | VIX 변동성지수 | 19.21 | ↑ (✗) | STRONG |
+| 비용·심리 관점 | 설비가동률(%) | 76.21 | ↑ (✓) | STRONG |
+
+> ✓ = 해당 방향이 Expansion 정합 / ✗ = 역방향 (Neutral·Contraction 우호)
+
+### E-3. 해석 가이드
+
+| 합의 등급 | 의미 | 권고 |
+|---------|------|------|
+| High Confidence | 3관점 동일 방향 | 현 시나리오(Expansion) 신뢰도 높음 — 포지션 유지 |
+| Moderate | 2:1 분할 | 소수 의견 Factor 집중 모니터링 — 분기 재평가 |
+| Caution | 2관점 이상 역신호 | 레짐 전환 선제 대응 체계 가동 |
+| Uncertain | 3관점 모두 다름 | 구조 변화 구간 — 모든 포지션 재검토 |
+
+**현재 등급**: **Moderate**
 

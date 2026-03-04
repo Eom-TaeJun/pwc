@@ -23,15 +23,17 @@ def run_rolling_ols(X: pd.DataFrame, y: pd.Series,
     Xsub = sm.add_constant(X[factors])
     params = RollingOLS(y, Xsub, window=window).fit().params.dropna()
 
-    rolling_coefs, stable, unstable = {}, [], []
+    rolling_coefs, stable, unstable, stability_scores = {}, [], [], {}
     for fac in factors:
         if fac not in params.columns:
             continue
         series = params[fac].dropna()
         ratio = abs(series.std() / series.mean()) if series.mean() != 0 else np.inf
         rolling_coefs[fac] = [{"date": d, "coef": round(v, 6)} for d, v in series.items()]
+        stability_scores[fac] = round(float(ratio), 3)
         (stable if ratio < ROLLING_STABILITY_THRESHOLD else unstable).append(fac)
 
     return {"stable_factors": stable, "unstable_factors": unstable,
+            "stability_scores": stability_scores,
             "rolling_coefs": rolling_coefs,
             "_params": {"window": window, "threshold": ROLLING_STABILITY_THRESHOLD}}

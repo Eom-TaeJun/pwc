@@ -302,6 +302,156 @@ def _appendix_d(analysis: dict, date_str: str) -> str:
 """
 
 
+def _appendix_e_multiperspective(analysis: dict, factors_data: dict) -> str:
+    """부록 E: 멀티관점 토론 (spec.md Section 7).
+
+    매크로 / 실물경제 / 비용·심리 3관점이 동일 데이터를 독립 해석.
+    공통 방향 → High Confidence / 2:1 → Moderate / 불일치 → Uncertain.
+    """
+    granger = {r["factor"]: r for r in analysis.get("granger", [])}
+    factor_data = factors_data.get("factors", {})
+
+    def _last_val(fid: str) -> float | None:
+        d = factor_data.get(fid, {}).get("data", [])
+        return d[-1]["value"] if d else None
+
+    def _dir(fid: str) -> str:
+        d = factor_data.get(fid, {}).get("data", [])
+        if len(d) < 4:
+            return "?"
+        vals = [x["value"] for x in d[-4:] if x.get("value") is not None]
+        if len(vals) < 2:
+            return "?"
+        return "↑" if vals[-1] > vals[-3 if len(vals) >= 3 else 0] else "↓"
+
+    # ── 관점별 핵심 Factor & 결론 ──────────────────────────────────
+    PERSPECTIVES = {
+        "매크로 관점": {
+            "factors": ["FEDFUNDS", "T10Y2Y", "DGS10"],
+            "question": "통화정책 사이클이 생산을 어디로 이끄는가?",
+        },
+        "실물경제 관점": {
+            "factors": ["PAYEMS", "UNRATE", "RETAILSMNSA"],
+            "question": "노동·소비 수요가 생산을 선행하는가?",
+        },
+        "비용·심리 관점": {
+            "factors": ["DCOILWTICO", "PPIACO", "VIXCLS", "TCU"],
+            "question": "비용 압박과 가동률이 생산을 제약하는가?",
+        },
+    }
+
+    EXPANSION_SIGNAL = {
+        "FEDFUNDS": "↓",   # 금리 하락 → Expansion 우호
+        "T10Y2Y": "↑",     # 스프레드 확대 → 정상화
+        "DGS10": "↑",      # 장기금리 상승 → 성장 기대
+        "PAYEMS": "↑",     # 고용 증가
+        "UNRATE": "↓",     # 실업률 하락
+        "RETAILSMNSA": "↑",
+        "DCOILWTICO": "↓", # 유가 하락 → 비용 완화
+        "PPIACO": "↓",     # PPI 하락 → 마진 개선
+        "VIXCLS": "↓",     # 불확실성 감소
+        "TCU": "↑",        # 가동률 상승
+    }
+
+    perspective_verdicts = {}
+    detail_rows = []
+
+    for pname, cfg in PERSPECTIVES.items():
+        signals, factors_in = [], []
+        for fid in cfg["factors"]:
+            d = _dir(fid)
+            val = _last_val(fid)
+            expected = EXPANSION_SIGNAL.get(fid, "?")
+            is_expansion = (d == expected)
+            g = granger.get(fid, {})
+            strength = g.get("strength", "—")
+            factors_in.append({
+                "id": fid,
+                "label": factor_data.get(fid, {}).get("label", fid),
+                "dir": d, "val": val,
+                "expansion": is_expansion, "strength": strength,
+            })
+            if d != "?":
+                signals.append(is_expansion)
+
+        if not signals:
+            verdict = "데이터 부족"
+        else:
+            pos = sum(signals)
+            neg = len(signals) - pos
+            if pos == len(signals):
+                verdict = "🟢 Expansion 지속"
+            elif pos > neg:
+                verdict = "🟡 Expansion 우세 (일부 역신호)"
+            elif neg > pos:
+                verdict = "🔴 Neutral/Contraction 우세"
+            else:
+                verdict = "⚪ 혼조 (방향 불명확)"
+
+        perspective_verdicts[pname] = verdict
+        for f in factors_in:
+            detail_rows.append([
+                pname, f["label"],
+                f"{f['val']:.2f}" if f["val"] is not None else "N/A",
+                f"{f['dir']} ({'✓' if f['expansion'] else '✗'})",
+                f["strength"],
+            ])
+
+    # ── 합의 도출 ──────────────────────────────────────────────────
+    green = sum(1 for v in perspective_verdicts.values() if "🟢" in v)
+    yellow = sum(1 for v in perspective_verdicts.values() if "🟡" in v)
+    red = sum(1 for v in perspective_verdicts.values() if "🔴" in v)
+
+    if green == 3:
+        consensus = "✅ **High Confidence** — 3관점 모두 Expansion 지속 신호"
+        confidence_str = "High"
+    elif green + yellow >= 2:
+        consensus = "⚠️ **Moderate Confidence** — 2관점 Expansion, 1관점 역신호"
+        confidence_str = "Moderate"
+    elif red >= 2:
+        consensus = "🚨 **Caution** — 2관점 이상 역신호 — 레짐 전환 리스크 상승"
+        confidence_str = "Low"
+    else:
+        consensus = "❓ **Uncertain** — 관점 간 불일치 — 구조 변화 구간 가능성"
+        confidence_str = "Uncertain"
+
+    pv_table = _fmt_table(
+        [[k, v] for k, v in perspective_verdicts.items()],
+        ["관점", "결론"],
+    )
+    detail_table = _fmt_table(detail_rows, ["관점", "Factor", "현재값", "방향(Exp 정합)", "Granger 강도"])
+
+    return f"""## 부록 E: 멀티관점 토론 (Multi-Perspective Debate)
+
+> **설계 원칙** (spec.md Section 7): 동일 분석 데이터를 3관점에서 독립 해석.
+> 공통 신호 = 강한 증거 / 불일치 = 구조 변화 리스크로 클라이언트에 전달.
+
+### E-1. 관점별 결론
+
+{pv_table}
+
+**종합 합의**: {consensus}
+
+### E-2. Factor별 상세 신호
+
+{detail_table}
+
+> ✓ = 해당 방향이 Expansion 정합 / ✗ = 역방향 (Neutral·Contraction 우호)
+
+### E-3. 해석 가이드
+
+| 합의 등급 | 의미 | 권고 |
+|---------|------|------|
+| High Confidence | 3관점 동일 방향 | 현 시나리오(Expansion) 신뢰도 높음 — 포지션 유지 |
+| Moderate | 2:1 분할 | 소수 의견 Factor 집중 모니터링 — 분기 재평가 |
+| Caution | 2관점 이상 역신호 | 레짐 전환 선제 대응 체계 가동 |
+| Uncertain | 3관점 모두 다름 | 구조 변화 구간 — 모든 포지션 재검토 |
+
+**현재 등급**: **{confidence_str}**
+
+"""
+
+
 def build_factor_report(
     factors_data: dict = None, analysis: dict = None, chart_paths: dict = None
 ) -> str:
@@ -346,6 +496,38 @@ def build_factor_report(
     consensus = granger_ids & lead_ids
     top_factors = ", ".join(consensus) if consensus else ", ".join(list(lead_ids)[:3]) or "N/A"
 
+    # ── 레짐 모멘텀: 최근 6개월 추이 ──────────────────────────────
+    reg_series = analysis.get("regime", {}).get("regime_series", [])
+    recent_regimes = [r["regime"] for r in reg_series[-6:]] if len(reg_series) >= 6 else []
+    exp_count = recent_regimes.count("Expansion")
+    neutral_count = recent_regimes.count("Neutral")
+    if exp_count >= 4:
+        momentum_label = "▲ 안정 Expansion (최근 6개월 중 {}회)".format(exp_count)
+    elif exp_count >= 2:
+        momentum_label = "△ Expansion 전환 중 (최근 6개월 중 {}회 — 불안정)".format(exp_count)
+    else:
+        momentum_label = "▽ Neutral 우세 (최근 6개월 중 Neutral {}회)".format(neutral_count)
+    recent_str = " → ".join(r[0] for r in recent_regimes)  # E/N/C 약자
+
+    # ── 상위 Granger Factor 현재 방향 ──────────────────────────────
+    factor_data = factors_data.get("factors", {})
+
+    def _direction(fid: str) -> str:
+        fd = factor_data.get(fid, {}).get("data", [])
+        if len(fd) < 4:
+            return "N/A"
+        recent_vals = [d["value"] for d in fd[-4:] if d.get("value") is not None]
+        if len(recent_vals) < 2:
+            return "N/A"
+        delta = recent_vals[-1] - recent_vals[-3] if len(recent_vals) >= 3 else recent_vals[-1] - recent_vals[0]
+        return "↑" if delta > 0 else "↓"
+
+    top_granger = [r for r in granger_leading[:3]] if granger_leading else []
+    factor_signal_str = ", ".join(
+        f"{r['label']} {_direction(r['factor'])}({r['lag']}M 선행)"
+        for r in top_granger
+    ) or top_factors
+
     # ── Executive Summary ──────────────────────────────────────────
     prob_str = " | ".join(f"{k}: {v * 100:.1f}%" for k, v in reg_probs.items())
     s_exec = f"""## Executive Summary
@@ -356,7 +538,8 @@ def build_factor_report(
 |------|------|
 | **현재 레짐** | **{reg_display}** ({reg_label}, 신뢰도 {reg_conf}%) |
 | 레짐 확률 분포 | {prob_str} |
-| 핵심 선행지표 | {ci.get('leading_indicators', top_factors)} |
+| **레짐 모멘텀** | {momentum_label} (`{recent_str}`) |
+| **선행지표 현재 신호** | {factor_signal_str} |
 | 분석 기간 | {period.get('start', 'N/A')} ~ {period.get('end', 'N/A')} ({period.get('n_obs', 'N/A')}개월) |
 | 데이터 출처 | FRED (Federal Reserve Bank of St. Louis) |
 
@@ -496,6 +679,16 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
     if chart_paths.get("importance_bar"):
         s3 += f"![Feature Importance]({chart_paths['importance_bar']})\n\n"
 
+    # stability_scores 표 (CV ratio 수치 병기)
+    s_scores = rs.get("stability_scores", {})
+    lasso_label_map = {r["factor"]: r.get("label", r["factor"]) for r in lasso}
+    score_rows = sorted(s_scores.items(), key=lambda x: x[1])
+    score_table = _fmt_table(
+        [[lasso_label_map.get(f, f), f"{v:.3f}", "✓ 안정" if v < r_threshold else "✗ 불안정"]
+         for f, v in score_rows],
+        ["Factor", "|std/mean| (CV)", "판정"],
+    ) if score_rows else ""
+
     s3 += f"""### 시간적 안정성 (Rolling OLS {r_window}개월 창)
 
 계수가 구간에 따라 흔들리지 않는지 검증. |std/mean| < {r_threshold} → 안정.
@@ -506,6 +699,8 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 | **불안정** | {unstable} |
 
 """
+    if score_table:
+        s3 += f"{score_table}\n\n"
     if unstable_list:
         s3 += """> **불안정 Factor 해석**: 분석 실패가 아닌 경제 구조 변화의 현실을 반영합니다.
 > 계수 방향 역전 감지 시 조기 경보 기준으로 활용하십시오 (분기 1회 재평가 권고).
@@ -515,10 +710,31 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
         s3 += f"![Rolling 계수 안정성]({chart_paths['rolling_coef']})\n"
 
     # ── Section 4: 무엇을 해야 하는가? ────────────────────────────
+    # 상위 Granger Factor 현재 방향 → 시나리오 판단 근거
+    signal_rows = []
+    for r in granger_leading[:5]:
+        fid = r["factor"]
+        direction = _direction(fid)
+        implication = {
+            "↑": "Expansion 지속 신호",
+            "↓": "Neutral 전환 경계",
+        }.get(direction, "방향 불명확")
+        signal_rows.append([r["label"], f"+{r['lag']}M", direction, implication])
+    signal_table = _fmt_table(
+        signal_rows, ["선행지표", "Lag", "현재 방향", "시나리오 함의"]
+    ) if signal_rows else ""
+
     s4 = f"""## 4. 무엇을 해야 하는가?
 
 > **핵심 발견**: 현재 **{reg_display}({reg_label})** 국면에서 선행지표가 보내는 신호에 따라
 > 세 가지 시나리오로 대응 체계를 분리합니다.
+> 레짐 모멘텀: {momentum_label}
+
+### 선행지표 현재 방향 신호
+
+{signal_table}
+
+> ↑ = 최근 3개월 상승 추세 / ↓ = 하락 추세 (Factor 원래 단위 기준)
 
 ### 시나리오별 대응 프레임
 
@@ -619,6 +835,9 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
     # ── 부록 D: Company Event × 매크로 레짐 연동 분석 ───────────────
     s_appx_d = _appendix_d(analysis, date_str)
 
+    # ── 부록 E: 멀티관점 토론 ────────────────────────────────────────
+    s_appx_e = _appendix_e_multiperspective(analysis, factors_data)
+
     # ── 최종 조합 ──────────────────────────────────────────────────
     report = f"""# {title}
 
@@ -636,7 +855,8 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 {s_appx_a}
 {s_appx_b}
 {s_appx_c}
-{s_appx_d}"""
+{s_appx_d}
+{s_appx_e}"""
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     path = f"{OUTPUT_DIR}/factor_pool_{date_str}.md"
