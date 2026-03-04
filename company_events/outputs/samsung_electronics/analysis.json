@@ -1,0 +1,35 @@
+{
+  "ticker": "005930.KS",
+  "event": {
+    "date": "2025-07-28",
+    "label": "삼성전자 + Tesla 2나노 파운드리 계약 (22.8조원, AI6 칩, 테일러 공장)"
+  },
+  "data_period": {
+    "start": "2020-02",
+    "end": "2026-03",
+    "n_obs": 74
+  },
+  "pelt_breaks": [
+    "2021-01",
+    "2024-07",
+    "2025-01",
+    "2025-08"
+  ],
+  "event_proximity_months": 1.0,
+  "before_event": {
+    "n": 66,
+    "start": "2020-02",
+    "end": "2025-07",
+    "mean_mom_pct": 0.869,
+    "std_mom_pct": 7.814,
+    "sharpe_monthly": 0.111
+  },
+  "after_event": {
+    "n": 9,
+    "start": "2025-07",
+    "end": "2026-03",
+    "mean_mom_pct": 15.459,
+    "std_mom_pct": 17.392,
+    "sharpe_monthly": 0.889
+  }
+}
