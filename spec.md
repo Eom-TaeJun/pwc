@@ -170,4 +170,39 @@ EIMAS Phase 3 (AI 에이전트 토론): `~/projects/autoai/eimas/`
 
 ---
 
-*최초 작성: 2026-03-03 | 갱신 시 반드시 날짜와 변경 이유 기록*
+## 8. 플러그인 아키텍처 (2026-03-04 추가)
+
+### Anthropic 공식 패턴 (financial-services-plugins 기준)
+
+```
+plugin-name/
+├── .claude-plugin/plugin.json   ← 매니페스트
+├── commands/*.md                ← 슬래시 커맨드 (워크플로 제어)
+├── skills/*/SKILL.md            ← 도메인 지식 (자동 활성화)
+├── hooks/hooks.json             ← 이벤트 자동화
+└── .mcp.json                    ← 외부 데이터 MCP 연동
+```
+
+### 현재 구현 상태
+
+| 컴포넌트 | 공식 패턴 | PWC 구현 | 비고 |
+|---------|----------|---------|------|
+| `plugin.json` | 필수 | ✅ `.claude-plugin/plugin.json` | 2026-03-04 추가 |
+| `commands/` | 슬래시 커맨드 | ✅ `commands/` | `/factor-analysis`, `/generate-report` |
+| Skills | 자동 활성화 | ✅ `.claude/skills/` | description에 트리거 조건 포함 |
+| Hooks | hooks.json | ✅ settings.json (훅 4개) | 공식 패턴보다 더 강한 구현 |
+| `.mcp.json` | 외부 데이터 연동 | ❌ **의도적 제외** | 보안 정책 (아래 참조) |
+| Agents | — | ✅ 6개 서브에이전트 | 공식 패턴 초과 구현 |
+
+### MCP 서버 미적용 이유 (보안 정책)
+
+CLAUDE.md NEVER 항목: **"MCP 서버 추가 금지 — 공급망 보안 위험 (tool poisoning / prompt injection 경로)"**
+
+FRED API는 공개 REST API이므로 직접 HTTP 호출(`src/collect.py`)로 충분.
+외부 MCP 서버 경유 시:
+1. 서버 측 프롬프트 주입(tool poisoning) 위험
+2. 포트폴리오 목적 — API 키 외부 서버 노출 불필요
+
+---
+
+*최초 작성: 2026-03-03 | 2026-03-04: plugin.json + commands/ 추가, MCP 미적용 이유 명기*

@@ -2,8 +2,9 @@
 name: factor-research
 description: |
   Factor Pool 도메인 지식 — LASSO 선별 원리, 선행지표 해석 가이드, Rolling OLS 안정성 기준.
-  거시경제 Factor 분석 시 자동 주입됩니다.
-user-invocable: true
+  Factor 분석, 선행지표 선별, INDPRO 예측, LASSO 결과 해석, Granger 인과관계 분석,
+  Rolling OLS 안정성 평가, GMM 레짐 진단 시 자동 주입됩니다.
+user-invocable: false
 ---
 
 # Factor Pool 개념
@@ -88,27 +89,34 @@ user-invocable: true
 
 ---
 
-## Factor Pool 20개 요약
+## Factor Pool 현황 (collect.py 기준, 16개 + Target 1개)
 
-| FRED ID | 변수 | 역할 |
-|---|---|---|
-| INDPRO | 산업생산지수 | **Target** (MoM%) |
-| T10Y2Y | 10Y-2Y 스프레드 | 경기 선행 |
-| FEDFUNDS | 연방기금금리 | 통화정책 |
-| CPIAUCSL | CPI | 인플레이션 |
-| UNRATE | 실업률 | 노동시장 |
-| HOUST | 주택착공 | 건설 선행 |
-| DCOILWTICO | WTI 유가 | 에너지 |
-| M2SL | M2 통화량 | 유동성 |
-| UMCSENT | 소비자심리 | 기대 |
-| PPIACO | PPI | 원가 압력 |
-| PERMIT | 건축허가 | 건설 선행 |
-| ACDGNO | 내구재 주문 | 제조 선행 |
-| RETAILSMNSA | 소매판매 | 소비 |
-| ISRATIO | 재고/판매 비율 | 공급망 |
-| PAYEMS | 비농업 고용 | 고용 |
-| KCFSI | 금융스트레스 | 금융여건 |
-| BAMLH0A0HYM2 | 하이일드 스프레드 | 신용 |
-| VIXCLS | VIX | 시장 불안 |
-| DGS10 | 10년 국채금리 | 장기 금리 |
-| DGS2 | 2년 국채금리 | 단기 금리 |
+> spec.md Section 2-2와 동기화. 미구현 후보는 하단 참조.
+
+| FRED ID | 변수 | 변환 | 역할 |
+|---------|------|------|------|
+| INDPRO | 산업생산지수 | MoM% | **Target** |
+| FEDFUNDS | 연방기금금리 | level | 통화정책 |
+| DGS10 | 10Y 국채금리 | level | 장기 자금조달 |
+| DGS2 | 2Y 국채금리 | level | 단기 자금조달 |
+| T10Y2Y | 10Y-2Y 스프레드 | level | 경기 선행 |
+| CPIAUCSL | CPI | YoY% | 소비 물가 |
+| PPIACO | PPI | MoM% | 원가 압력 |
+| UNRATE | 실업률 | level | 노동시장 |
+| PAYEMS | 비농업 고용 | diff(천명) | 고용 선행 |
+| RETAILSMNSA | 소매판매 | MoM% | 소비 수요 |
+| HOUST | 주택착공 | MoM% | 건설 선행 |
+| UMCSENT | 소비자심리 | level | 기대 (후행 가능성 주의) |
+| M2SL | M2 통화량 | MoM% | 유동성 |
+| DEXUSEU | USD/EUR 환율 | level | 수출입 경쟁력 |
+| DCOILWTICO | WTI 유가 | MoM% | 에너지 비용 |
+| VIXCLS | VIX | level | 시장 불확실성 |
+| TCU | 설비가동률 | level | 생산 여력 직접 측정 |
+
+### 미구현 후보 (향후 확장 시)
+
+| FRED ID | 변수 | 추가 가치 |
+|---------|------|----------|
+| BAMLH0A0HYM2 | 하이일드 스프레드 | 신용 리스크 → 투자 위축 (lag 3~6M) |
+| ACDGNO | 내구재 주문 | 제조 선행지표 (ISM과 유사) |
+| ISRATIO | 재고/판매 비율 | 공급망 과잉 신호 |

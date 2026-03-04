@@ -1,0 +1,9 @@
+{
+  "name": "pwc-factor-research",
+  "version": "0.3.0",
+  "description": "PwC 오퍼레이션 컨설팅 RA 포트폴리오 — FRED 공개 데이터로 산업생산(INDPRO) 선행지표를 LASSO·GMM·Granger 방법론으로 발굴하는 Factor Pool 분석 파이프라인",
+  "author": {
+    "name": "Eom-TaeJun",
+    "role": "RA Intern Candidate — PwC Operations Consulting"
+  }
+}
