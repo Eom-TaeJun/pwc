@@ -3,6 +3,7 @@ name: report-writer
 description: |
   report_raw_YYYYMMDD.json을 읽어 PwC 컨설팅 스타일 MD 보고서를 작성한다.
   consulting-context 스킬을 활성화하여 보고서 구조와 작성 지침을 참조한다.
+  트리거: /generate-report 커맨드, 보고서 작성 요청, report_raw JSON 존재 시.
 
   <example>
   Context: main.py --report 실행 후 raw JSON 생성됨

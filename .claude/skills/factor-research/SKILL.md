@@ -2,7 +2,7 @@
 name: factor-research
 description: |
   Factor Pool 도메인 지식 — LASSO 선별 원리, 선행지표 해석 가이드, Rolling OLS 안정성 기준.
-  Factor 분석, 선행지표 선별, INDPRO 예측, LASSO 결과 해석, Granger 인과관계 분석,
+  트리거: Factor 분석, 선행지표 선별, INDPRO 예측, LASSO 결과 해석, Granger 인과관계 분석,
   Rolling OLS 안정성 평가, GMM 레짐 진단 시 자동 주입됩니다.
 user-invocable: false
 ---
