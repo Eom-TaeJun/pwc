@@ -219,6 +219,89 @@ def _short_period_section(analysis: dict) -> str:
 """
 
 
+def _appendix_d(analysis: dict, date_str: str) -> str:
+    """부록 D: Company Event × 매크로 레짐 연동 분석."""
+    import glob as _glob
+    import json as _json
+
+    def _load_event(path: str) -> dict:
+        files = _glob.glob(path)
+        if not files:
+            return {}
+        with open(files[0], encoding="utf-8") as f:
+            return _json.load(f)
+
+    rddt = _load_event("company_events/outputs/reddit/analysis.json")
+    sams = _load_event("company_events/outputs/samsung_electronics/analysis.json")
+    if not rddt and not sams:
+        return ""
+
+    # GMM 레짐 조회 헬퍼
+    regime_series = {
+        r["date"][:7]: r["regime"]
+        for r in analysis.get("regime", {}).get("regime_series", [])
+    }
+
+    def _regime(ym: str) -> str:
+        return regime_series.get(ym, "N/A")
+
+    # 차트 생성
+    chart_ref = ""
+    try:
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+        from company_events.regime_overlay import draw as _draw
+        chart_path = _draw(date_str)
+        chart_ref = f"\n![Company Event × 매크로 레짐 오버레이]({chart_path})\n"
+    except Exception as e:
+        chart_ref = f"\n_차트 생성 실패: {e}_\n"
+
+    # 핵심 날짜별 레짐 테이블
+    key_dates = [
+        ("Reddit — OpenAI 계약", "2024-05", "RDDT"),
+        ("Reddit — Q3 어닝 주가 급등", "2024-10", "RDDT"),
+        ("Reddit — Dynp break 1", "2025-01", "RDDT"),
+        ("Samsung — Tesla 2nm 계약", "2025-07", "005930.KS"),
+        ("Samsung — Dynp break", "2025-08", "005930.KS"),
+    ]
+    rows = [[label, ym, _regime(ym)] for label, ym, _ in key_dates]
+    tbl = _fmt_table(rows, ["이벤트", "날짜(YM)", "GMM 레짐"])
+
+    return f"""## 부록 D: Company Event × 매크로 레짐 연동 분석
+
+> **방법론**: GMM 3-state 레짐(Expansion/Neutral/Contraction)을 개별 기업 이벤트 시점에 오버레이.
+> 매크로 Factor Pool 분석(INDPRO 기준)과 기업 구조 변화의 정합성을 시각화합니다.
+
+### D-1. 핵심 이벤트 시점별 GMM 레짐
+
+{tbl}
+
+### D-2. 연동 패턴 비교
+
+| 항목 | Samsung Electronics | Reddit (RDDT) |
+|------|-------------------|---------------|
+| 이벤트 | Tesla 2nm 파운드리 계약 (2025-07-28) | OpenAI 파트너십 (2024-05-16) |
+| 이벤트 시점 레짐 | **Expansion** | Neutral |
+| Dynp break 시점 레짐 | Neutral (2025-08) | Neutral (2025-01) |
+| 매크로 연동 | **연동** — AI 제조 수요 확장과 타이밍 정합 | **비연동** — 사이클 무관 구조 변화 |
+| 포트폴리오 서사 | 매크로 Expansion이 AI 파운드리 피벗 성공의 배경 | AI 데이터 수익화는 경기 사이클을 초월한 독자 전환 |
+
+### D-3. 방법론 해석
+{chart_ref}
+- **Samsung**: Tesla 계약(2025-07)이 Expansion 국면에서 체결 → 매크로 생산 확대 수요가
+  AI 파운드리 사업의 실수요를 뒷받침. Factor Pool의 PAYEMS(고용 선행)·M2SL(유동성)이
+  동 기간 STRONG 신호를 유지한 것과 방향 일치.
+- **Reddit**: 계약(2024-05)부터 break(2025-01)까지 모든 핵심 시점이 Neutral.
+  원인은 금리 인하(2024-09)가 아니라 **Q3 어닝(2024-10-29)을 통한 AI 매출 실적 확인** →
+  시장이 발표(5월) 아닌 증거(10월) 이후 구조 재평가. 이는 Factor Pool의 매크로 신호와
+  독립적인 기업 특유 구조 변화임.
+- **방법론 한계**: GMM은 INDPRO MoM%를 기준으로 학습. 주가 수익률과의 직접 Granger
+  검증은 미구현(향후 확장 가능). 현재 레짐 오버레이는 **배경 조건 확인** 수준.
+
+"""
+
+
 def build_factor_report(
     factors_data: dict = None, analysis: dict = None, chart_paths: dict = None
 ) -> str:
@@ -533,6 +616,9 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
     # ── 부록 C: 단기 집중 분석 ──────────────────────────────────────
     s_appx_c = _short_period_section(analysis)
 
+    # ── 부록 D: Company Event × 매크로 레짐 연동 분석 ───────────────
+    s_appx_d = _appendix_d(analysis, date_str)
+
     # ── 최종 조합 ──────────────────────────────────────────────────
     report = f"""# {title}
 
@@ -549,7 +635,8 @@ LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Fact
 
 {s_appx_a}
 {s_appx_b}
-{s_appx_c}"""
+{s_appx_c}
+{s_appx_d}"""
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     path = f"{OUTPUT_DIR}/factor_pool_{date_str}.md"
