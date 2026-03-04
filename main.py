@@ -47,13 +47,14 @@ def cmd_importance():
 
 
 def cmd_report():
-    """Factor Pool 리서치 보고서 생성"""
-    print("[report] 보고서 생성 중...")
+    """보고서 원재료 JSON 생성 (report-writer 에이전트가 MD 작성)"""
+    print("[report] 보고서 원재료(raw data) 생성 중...")
     from src.chart import generate_all
-    from src.report import build_factor_report
+    from src.report import build_raw_data
     charts = generate_all()
-    path = build_factor_report(chart_paths=charts)
-    print(f"  ✓ 보고서: {path}")
+    path = build_raw_data(chart_paths=charts)
+    print(f"  ✓ 원재료 JSON: {path}")
+    print(f"  → report-writer 에이전트에게 MD 작성 지시 필요")
     return path
 
 
@@ -84,9 +85,9 @@ def cmd_all():
     X, y = build_dataframe(factors_data)
     charts = generate_all(analysis=analysis, X_df=X, y_series=y)
 
-    print("\n[4/5] 보고서 생성...")
-    from src.report import build_factor_report
-    report_path = build_factor_report(factors_data, analysis, charts)
+    print("\n[4/5] 보고서 원재료 생성...")
+    from src.report import build_raw_data
+    report_path = build_raw_data(factors_data, analysis, charts)
 
     print("\n[5/5] HTML 변환...")
     from src.export import md_to_html
