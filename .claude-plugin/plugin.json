@@ -1,9 +1,31 @@
 {
   "name": "pwc-factor-research",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "PwC 오퍼레이션 컨설팅 RA 포트폴리오 — FRED 공개 데이터로 산업생산(INDPRO) 선행지표를 LASSO·GMM·Granger 방법론으로 발굴하는 Factor Pool 분석 파이프라인",
   "author": {
     "name": "Eom-TaeJun",
     "role": "RA Intern Candidate — PwC Operations Consulting"
+  },
+  "commands": [
+    { "name": "factor-analysis", "description": "FRED 수집 → LASSO·Granger·GMM 분석 전체 파이프라인 실행" },
+    { "name": "generate-report", "description": "report_raw JSON → PwC 컨설팅 스타일 MD 보고서 생성" },
+    { "name": "harness-check", "description": "6-레이어 하니스 아키텍처 준수 점검" }
+  ],
+  "skills": [
+    { "name": "factor-research", "description": "LASSO 선별 원리, 선행지표 해석, Rolling OLS 안정성 기준" },
+    { "name": "consulting-context", "description": "PwC 컨설팅 보고서 작성 가이드 — report_raw → MD 변환" }
+  ],
+  "agents": [
+    { "name": "pwc-lead", "model": "claude-sonnet-4-6", "description": "파이프라인 조율 + 품질 검토" },
+    { "name": "factor-collector", "model": "claude-haiku-4-5-20251001", "description": "FRED 16개 Factor 수집" },
+    { "name": "lasso-analyst", "model": "claude-sonnet-4-6", "description": "LASSO·Granger·Rolling OLS·RF 분석" },
+    { "name": "report-writer", "model": "claude-sonnet-4-6", "description": "consulting-context 스킬로 MD 보고서 작성" },
+    { "name": "sanity-checker", "model": "claude-sonnet-4-6", "description": "분석 수치 경제적 타당성 검증" },
+    { "name": "pwc-reviewer", "model": "claude-sonnet-4-6", "description": "현업 RA 채용 관점 포트폴리오 점검" },
+    { "name": "harness-checker", "model": "claude-haiku-4-5-20251001", "description": "6-레이어 하니스 위반 자동 탐지" }
+  ],
+  "security": {
+    "mcp_servers": "disabled",
+    "mcp_policy": "FRED API는 직접 HTTP 호출(src/collect.py) — MCP 경유 시 tool poisoning 위험"
   }
 }

@@ -5,11 +5,8 @@ description: |
   RA 채용 담당 시니어 컨설턴트 페르소나로 동작.
   호출 조건: "현업 관점으로 검토해줘", "PwC 리뷰", "포트폴리오 점검"
 model: claude-sonnet-4-6
-tools:
-  - Read
-  - Glob
-  - Grep
-  - Bash
+color: red
+tools: ["Read", "Glob", "Grep", "Bash"]
 ---
 
 # 페르소나

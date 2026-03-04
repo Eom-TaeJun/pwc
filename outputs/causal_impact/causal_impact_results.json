@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Samsung_Tesla2nm_Long",
+    "label": "Samsung — Tesla 2nm 계약 (전략적 효과, 6개월)",
+    "regime": "Expansion",
+    "benchmark": "SK Hynix (반도체 섹터 피어)",
+    "hypothesis": "반도체 섹터 피어 대비 계약이 중장기 포지셔닝 변화를 만들었는가?",
+    "event_date": "2025-07-28",
+    "pre_period": [
+      "2025-01-31",
+      "2025-07-25"
+    ],
+    "post_period": [
+      "2025-07-28",
+      "2026-01-27"
+    ],
+    "avg_rel_pct": 2.0,
+    "cum_rel_pct": 2.0,
+    "p_value": 0.0,
+    "significant": true,
+    "timing": {
+      "timing_label": "지연 효과 (Strategic)",
+      "timing_desc": "효과가 시간 경과 후 누적 — 전략적 이벤트 특성, 시장 재평가에 시간 소요",
+      "short_hit_rate": 1.0,
+      "full_hit_rate": 1.0,
+      "front_load_ratio": 0.33,
+      "n_short_days": 20
+    },
+    "summary": "                              Average     Cumulative\nActual                             11           1397\nPredicted                          11           1370\n95% CI                       [10, 11]   [1340, 1400]\n                                                    \nAbsolute Effect                     0             27\n95% CI                         [0, 0]       [56, -2]\n                                                    \nRelative Effect                  2.0%           2.0%\n95% CI                  [4.1%, -0.2%]  [4.1%, -0.2%]\n                                                    \nP-value                          0.0%               \nProb. of Causal Effect         100.0%               \n",
+    "chart": "outputs/causal_impact/causal_impact_Samsung_Tesla2nm_Long.png"
+  },
+  {
+    "name": "Samsung_Tesla2nm_Short",
+    "label": "Samsung — Tesla 2nm 계약 (즉각 반응, 20거래일)",
+    "regime": "Expansion",
+    "benchmark": "SK Hynix (반도체 섹터 피어)",
+    "hypothesis": "계약 발표에 시장이 반도체 섹터 대비 즉각적으로 반응했는가?",
+    "event_date": "2025-07-28",
+    "pre_period": [
+      "2025-01-31",
+      "2025-07-25"
+    ],
+    "post_period": [
+      "2025-07-28",
+      "2025-08-25"
+    ],
+    "avg_rel_pct": 0.7,
+    "cum_rel_pct": 0.7,
+    "p_value": 0.0,
+    "significant": true,
+    "timing": {
+      "timing_label": "지속 효과 (Sustained)",
+      "timing_desc": "Post 기간 전반에 걸쳐 일관된 초과 효과 유지",
+      "short_hit_rate": 1.0,
+      "full_hit_rate": 1.0,
+      "front_load_ratio": 0.99,
+      "n_short_days": 5
+    },
+    "summary": "                              Average     Cumulative\nActual                             11            223\nPredicted                          11            221\n95% CI                       [10, 11]     [219, 223]\n                                                    \nAbsolute Effect                     0              1\n95% CI                         [0, 0]         [3, 0]\n                                                    \nRelative Effect                  0.7%           0.7%\n95% CI                  [1.6%, -0.2%]  [1.6%, -0.2%]\n                                                    \nP-value                          0.0%               \nProb. of Causal Effect         100.0%               \n",
+    "chart": "outputs/causal_impact/causal_impact_Samsung_Tesla2nm_Short.png"
+  },
+  {
+    "name": "Reddit_Q3Earnings",
+    "label": "Reddit (RDDT) — Q3 어닝 발표 (30거래일)",
+    "regime": "Neutral",
+    "benchmark": "S&P500",
+    "hypothesis": "거시 Neutral 레짐에서 어닝 서프라이즈가 S&P500 대비 유의한 단기 초과 상승을 만들었는가?",
+    "event_date": "2024-10-29",
+    "pre_period": [
+      "2024-04-29",
+      "2024-10-28"
+    ],
+    "post_period": [
+      "2024-10-29",
+      "2024-12-10"
+    ],
+    "avg_rel_pct": 10.8,
+    "cum_rel_pct": 10.8,
+    "p_value": 0.0,
+    "significant": true,
+    "timing": {
+      "timing_label": "지속 효과 (Sustained)",
+      "timing_desc": "Post 기간 전반에 걸쳐 일관된 초과 효과 유지",
+      "short_hit_rate": 1.0,
+      "full_hit_rate": 1.0,
+      "front_load_ratio": 0.72,
+      "n_short_days": 7
+    },
+    "summary": "                              Average     Cumulative\nActual                              4            146\nPredicted                           4            132\n95% CI                         [4, 4]     [125, 140]\n                                                    \nAbsolute Effect                     0             14\n95% CI                         [0, 0]        [21, 6]\n                                                    \nRelative Effect                 10.8%          10.8%\n95% CI                  [16.4%, 5.1%]  [16.4%, 5.1%]\n                                                    \nP-value                          0.0%               \nProb. of Causal Effect         100.0%               \n",
+    "chart": "outputs/causal_impact/causal_impact_Reddit_Q3Earnings.png"
+  }
+]

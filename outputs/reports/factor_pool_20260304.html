@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+
+@font-face {
+    font-family: 'NanumGothic';
+    src: local('NanumGothic'), local('나눔고딕');
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'NanumGothic', 'Noto Sans CJK KR', 'Noto Sans KR', sans-serif;
+    font-size: 10pt;
+    line-height: 1.7;
+    color: #1a1a2e;
+    padding: 0;
+}
+
+@page {
+    size: A4;
+    margin: 18mm 16mm 18mm 16mm;
+    @bottom-right {
+        content: counter(page) " / " counter(pages);
+        font-size: 8pt;
+        color: #888;
+        font-family: 'NanumGothic', sans-serif;
+    }
+    @top-left {
+        content: "PwC Factor Pool 분석 보고서";
+        font-size: 8pt;
+        color: #888;
+        font-family: 'NanumGothic', sans-serif;
+    }
+}
+
+/* 제목 */
+h1 {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #d4380d;
+    border-bottom: 3px solid #d4380d;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    margin-top: 0;
+    line-height: 1.4;
+}
+
+h2 {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #0d4f8c;
+    border-left: 4px solid #0d4f8c;
+    padding-left: 10px;
+    margin-top: 20px;
+    margin-bottom: 8px;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #333;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    page-break-after: avoid;
+}
+
+h4 {
+    font-size: 10pt;
+    font-weight: 700;
+    color: #555;
+    margin-top: 10px;
+    margin-bottom: 4px;
+}
+
+p {
+    margin-bottom: 8px;
+}
+
+/* 테이블 */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10px 0;
+    font-size: 9pt;
+    page-break-inside: avoid;
+}
+
+thead tr {
+    background-color: #0d4f8c;
+    color: white;
+}
+
+th {
+    padding: 7px 10px;
+    text-align: left;
+    font-weight: 700;
+}
+
+td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+tr:nth-child(even) td {
+    background-color: #f5f8ff;
+}
+
+tr:last-child td {
+    border-bottom: 2px solid #0d4f8c;
+}
+
+/* 인용 블록 (핵심 발견) */
+blockquote {
+    border-left: 4px solid #fa8c16;
+    background-color: #fff7e6;
+    padding: 8px 14px;
+    margin: 10px 0;
+    color: #7c4700;
+    font-size: 9.5pt;
+    page-break-inside: avoid;
+}
+
+blockquote p {
+    margin: 0;
+}
+
+/* 코드 */
+code {
+    background-color: #f0f4ff;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    color: #c41d7f;
+}
+
+pre {
+    background-color: #f6f8fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 10px 14px;
+    overflow-x: auto;
+    font-size: 8pt;
+    margin: 8px 0;
+    page-break-inside: avoid;
+}
+
+pre code {
+    background: none;
+    padding: 0;
+    color: #333;
+}
+
+/* 구분선 */
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 14px 0;
+}
+
+/* 강조 */
+strong { color: #0d4f8c; font-weight: 700; }
+em { color: #555; }
+
+/* 경고 기호 포함 단락 */
+p:has(> strong:first-child) {
+    background-color: #f0f4ff;
+    border-radius: 4px;
+    padding: 6px 10px;
+}
+
+ul, ol {
+    padding-left: 18px;
+    margin-bottom: 8px;
+}
+
+li {
+    margin-bottom: 3px;
+}
+
+/* 이미지 */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 10px auto;
+    page-break-inside: avoid;
+}
+
+/* 페이지 분리 제어 */
+h2 { page-break-before: auto; }
+</style>
+</head>
+<body>
+<h1 id="expansion-fed-funds-rate-granger-6">산업생산 Expansion 국면: Fed Funds Rate Granger 검증상 6개월 선행</h1>
+<p><strong>생성일</strong>: 2026-03-04 | <strong>Target</strong>: 산업생산지수 MoM% | <strong>출처</strong>: FRED</p>
+<hr />
+<h2 id="executive-summary">Executive Summary</h2>
+<blockquote>
+<p><strong>한 줄 결론</strong>: 현재 산업생산 레짐: Expansion. FEDFUNDS 신호 추이가 생산계획 조기 경보 역할</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>현재 레짐</strong></td>
+<td><strong>고모멘텀</strong> (Expansion, 신뢰도 37.4%)</td>
+</tr>
+<tr>
+<td>레짐 확률 분포</td>
+<td>Neutral 44.8% / Contraction 0.0% / Expansion 55.2%</td>
+</tr>
+<tr>
+<td><strong>레짐 모멘텀</strong></td>
+<td>▲ 안정 Expansion (최근 6개월 중 4회) (<code>E → N → E → N → E → E</code>)</td>
+</tr>
+<tr>
+<td><strong>선행지표 현재 신호</strong></td>
+<td>Fed Funds Rate ↓(6M 선행), 실업률 ↓(7M 선행), 비농업고용 MoM 증감(천명) ↑(11M 선행)</td>
+</tr>
+<tr>
+<td>분석 기간</td>
+<td>2000-02-01 ~ 2025-11-01 (309개월)</td>
+</tr>
+<tr>
+<td>데이터 출처</td>
+<td>FRED (Federal Reserve Bank of St. Louis)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="1">1. 지금 어디에 있는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: 미국 산업생산(INDPRO)은 현재 <strong>고모멘텀</strong> 국면에 있으며,<br />
+Shannon Entropy 0.626로 레짐 전환 가능성이 낮은 안정적 상태입니다.</p>
+</blockquote>
+<p>GMM 3-state 모델이 309개월 데이터에서 식별한 현재 레짐:</p>
+<blockquote>
+<p>※ 레짐은 INDPRO MoM% <strong>성장률 변동성</strong> 기준으로 분류합니다. NBER 경기확장·침체와 직접 대응하지 않습니다.<br />
+고모멘텀(MoM% 장기 평균 대비 +1σ 이상) / 안정성장(정상 범위) / 저모멘텀(−1σ 이하 또는 음수)</p>
+<p><strong>GMM 레이블 배정 기준</strong>: 3개 클러스터 중 사후확률 평균 MoM%가 가장 높은 클러스터 → Expansion, 중간 → Neutral, 가장 낮은(또는 음수) → Contraction으로 정렬 배정. 클러스터 수(k=3)는 BIC 기준 최적값.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>지표</th>
+<th>값</th>
+<th>해석</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>레짐</strong></td>
+<td><strong>고모멘텀</strong> (Expansion)</td>
+<td>GMM 사후확률 최댓값 기준</td>
+</tr>
+<tr>
+<td>신뢰도</td>
+<td>37.4%</td>
+<td>Shannon Entropy 0.626 (GMM 사후확률 기반)</td>
+</tr>
+<tr>
+<td>레짐 확률</td>
+<td>Neutral 44.8% / Contraction 0.0% / Expansion 55.2%</td>
+<td>복수 레짐 경합</td>
+</tr>
+</tbody>
+</table>
+<p>Expansion (신뢰도 37.4%)</p>
+<blockquote>
+<p><strong>⚠ 해석 주의</strong>: 신뢰도 37.4%는 "현재 데이터점이 고모멘텀(Expansion) 클러스터에 속할 GMM 사후확률"이며,<br />
+레짐 분류의 절대적 정확성을 보장하지 않습니다.<br />
+GMM 모델은 <strong>구조 변화 구간(2008~2009 금융위기, 2020 팬데믹)에서 신뢰도가 저하</strong>됩니다.<br />
+해당 기간 데이터가 포함된 전체 추정 결과이므로 최근 구간(2020 이후) 별도 검증을 권고합니다.</p>
+</blockquote>
+<h2 id="2">2. 무엇이 먼저 움직이는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: <strong>Granger 인과성 검증</strong>에서 Fed Funds Rate 등 <strong>13개 Factor</strong>가 INDPRO를 앞서 움직임을 확인했습니다. Cross-correlation 최적 Lag가 음수(−)로 나타나는 경우는 Granger 인과 방향(Factor→INDPRO)과 다른 방향, 즉 INDPRO 변화에 대한 정책·지표의 <strong>반응 함수</strong>를 포착한 피드백 루프입니다.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>지표명</th>
+<th>Granger 선행</th>
+<th>강도</th>
+<th>Cross-corr Lag</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fed Funds Rate</td>
+<td>+6개월</td>
+<td>STRONG</td>
+<td>-11개월</td>
+</tr>
+<tr>
+<td>실업률</td>
+<td>+7개월</td>
+<td>STRONG</td>
+<td>0개월</td>
+</tr>
+<tr>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>+11개월</td>
+<td>STRONG</td>
+<td>-12개월</td>
+</tr>
+<tr>
+<td>M2 통화량 MoM%</td>
+<td>+5개월</td>
+<td>STRONG</td>
+<td>0개월</td>
+</tr>
+<tr>
+<td>WTI 유가 MoM%</td>
+<td>+1개월</td>
+<td>STRONG</td>
+<td>-10개월</td>
+</tr>
+<tr>
+<td>VIX 변동성지수</td>
+<td>+2개월</td>
+<td>STRONG</td>
+<td>-8개월</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Lag 해석</strong>: Granger Lag(+)는 '해당 Factor → INDPRO' 선행 방향. Cross-corr Lag(−)는 'INDPRO 변화 → 해당 Factor' 반응 방향. 부호가 반대인 경우 <strong>피드백 루프</strong>를 의미하며, 선행 관계 자체는 Granger 기준으로 판단합니다.</p>
+<p><strong>방법론 노트</strong>: Granger는 차분 기준 시간적 인과성(Factor→INDPRO),<br />
+Cross-correlation은 MoM% 변환 기준 최적 lag 탐색(양방향 탐색)입니다.<br />
+두 방법이 <strong>동일 방향</strong>이면 강한 선행 증거 / <strong>반대 부호</strong>면 피드백 루프.</p>
+</blockquote>
+<h2 id="3">3. 얼마나 확신할 수 있는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: LASSO·Random Forest·Rolling OLS 세 방법이 공통으로 지목한 Factor는<br />
+<strong>PAYEMS, RETAILSMNSA, DEXUSEU, VIXCLS, TCU, M2SL, PPIACO, DCOILWTICO, DGS2, HOUST, UMCSENT, DGS10, UNRATE</strong>입니다. 단일 방법 의존보다 신뢰도가 높습니다.</p>
+</blockquote>
+<p><strong>방법론 선택 근거 — 왜 단일 모델로 결론 내지 않는가</strong></p>
+<table>
+<thead>
+<tr>
+<th>제약 상황</th>
+<th>발생 원인</th>
+<th>채택한 보완 방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LASSO 임의 선택</td>
+<td>상관 Factor끼리 묶일 때 하나만 선별 (PAYEMS 선택 시 UNRATE 배제 가능)</td>
+<td>RF Importance 교차검증으로 상관 편향 확인</td>
+</tr>
+<tr>
+<td>RF MDI 과대평가</td>
+<td>연속형·고분산 변수(PAYEMS 단위: 천명)를 스케일 크기로 우선 선별</td>
+<td>LASSO 계수와 일치 여부로 필터링</td>
+</tr>
+<tr>
+<td>Granger ≠ 예측력</td>
+<td>역사적 인과가 미래에 지속된다는 보장 없음</td>
+<td>Rolling OLS 안정성으로 시기별 유효성 확인</td>
+</tr>
+<tr>
+<td>전기간 Granger 과소 p-value</td>
+<td>309개월 데이터 길이로 통계적 유의성 과장</td>
+<td>PELT 사이클 세그먼트 별도 재검증</td>
+</tr>
+</tbody>
+</table>
+<p><strong>결론 도출 기준</strong>: 4가지 방법 중 ≥3개에서 공통으로 포착된 Factor만 "신뢰 가능한 선행지표"로 분류한다. 방법마다 제약이 다르기 때문에 교집합에서만 편향이 상쇄된다.</p>
+<h3 id="lasso-ml">LASSO + ML 교차검증</h3>
+<p>LASSO(α 교차검증)와 Random Forest가 모두 상위권으로 선별한 Factor:</p>
+<table>
+<thead>
+<tr>
+<th>순위</th>
+<th>지표명</th>
+<th>RF Importance</th>
+<th>LASSO 선별</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>0.2490</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>2</td>
+<td>M2 통화량 MoM%</td>
+<td>0.2084</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>3</td>
+<td>실업률</td>
+<td>0.1197</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>4</td>
+<td>주택착공 MoM%</td>
+<td>0.1054</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>5</td>
+<td>WTI 유가 MoM%</td>
+<td>0.0671</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>6</td>
+<td>PPI MoM%</td>
+<td>0.0477</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>7</td>
+<td>설비가동률(%)</td>
+<td>0.0419</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2Y Treasury Yield</td>
+<td>0.0406</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Feature Importance" src="outputs/charts/importance_bar_20260304.png" /></p>
+<blockquote>
+<p><strong>Feature Importance 한계 및 SHAP 비교</strong>: RF MDI(Mean Decrease Impurity)는 ① 연속형·고분산 변수를 과대평가하고 ② 상관 변수 간에 중요도가 분산된다. SHAP(Shapley Additive Explanations)는 게임이론 공정 배분으로 이 편향을 일부 완화하지만, 시계열에서 Feature 간 자기상관이 높을 때 SHAP도 설명력을 잘못 귀속할 수 있다. 본 분석은 LASSO 계수(정규화 기반 선별)와 RF Importance를 교차검증하여 단일 모델 편향을 상쇄했다. SHAP는 최종 선별된 Factor의 개별 예측 기여를 설명하는 추가 단계로 활용 가능하다.</p>
+</blockquote>
+<h3 id="rolling-ols-36">시간적 안정성 (Rolling OLS 36개월 창)</h3>
+<p>계수가 구간에 따라 흔들리지 않는지 검증. |std/mean| &lt; 0.5 → 안정.</p>
+<table>
+<thead>
+<tr>
+<th>구분</th>
+<th>Factor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>안정</strong></td>
+<td>없음</td>
+</tr>
+<tr>
+<td><strong>불안정</strong></td>
+<td>PAYEMS, UNRATE, HOUST, VIXCLS, M2SL</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>CV ratio</th>
+<th>판정</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>1.133</td>
+<td>✗ 불안정</td>
+</tr>
+<tr>
+<td>M2 통화량 MoM%</td>
+<td>1.384</td>
+<td>✗ 불안정</td>
+</tr>
+<tr>
+<td>주택착공 MoM%</td>
+<td>1.416</td>
+<td>✗ 불안정</td>
+</tr>
+<tr>
+<td>실업률</td>
+<td>2.775</td>
+<td>✗ 불안정</td>
+</tr>
+<tr>
+<td>VIX 변동성지수</td>
+<td>4.156</td>
+<td>✗ 불안정</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>불안정 Factor 해석</strong>: 분석 실패가 아닌 경제 구조 변화의 현실을 반영합니다.<br />
+계수 방향 역전 감지 시 조기 경보 기준으로 활용하십시오 (분기 1회 재평가 권고).</p>
+</blockquote>
+<h2 id="4">4. 무엇을 해야 하는가?</h2>
+<blockquote>
+<p><strong>핵심 발견</strong>: 현재 <strong>고모멘텀(Expansion)</strong> 국면에서 선행지표가 보내는 신호에 따라<br />
+세 가지 시나리오로 대응 체계를 분리합니다.<br />
+레짐 모멘텀: ▲ 안정 Expansion (최근 6개월 중 4회)</p>
+</blockquote>
+<h3 id="_1">선행지표 현재 방향 신호</h3>
+<table>
+<thead>
+<tr>
+<th>선행지표</th>
+<th>Lag</th>
+<th>현재 방향</th>
+<th>시나리오 함의</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Fed Funds Rate</td>
+<td>+6M</td>
+<td>↓</td>
+<td>Neutral 전환 경계</td>
+</tr>
+<tr>
+<td>실업률</td>
+<td>+7M</td>
+<td>↓</td>
+<td>Neutral 전환 경계</td>
+</tr>
+<tr>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>+11M</td>
+<td>↑</td>
+<td>Expansion 지속 신호</td>
+</tr>
+<tr>
+<td>M2 통화량 MoM%</td>
+<td>+5M</td>
+<td>↑</td>
+<td>Expansion 지속 신호</td>
+</tr>
+<tr>
+<td>WTI 유가 MoM%</td>
+<td>+1M</td>
+<td>↑</td>
+<td>Expansion 지속 신호</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>↑ = 최근 3개월 상승 추세 / ↓ = 하락 추세 (Factor 원래 단위 기준)</p>
+</blockquote>
+<h3 id="_2">시나리오별 대응 프레임</h3>
+<table>
+<thead>
+<tr>
+<th>시나리오</th>
+<th>신호 조건</th>
+<th>핵심 모니터링 Factor(주기)</th>
+<th>대응 권고</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Expansion</strong></td>
+<td>선행 Factor 지속 상승</td>
+<td>비농업고용 MoM 증감(천명)(분기) / VIX 변동성지수(매월) / 설비가동률(%)(분기)</td>
+<td>현 포지션 유지, 레짐 전환 신호 모니터링</td>
+</tr>
+<tr>
+<td><strong>Neutral</strong></td>
+<td>혼조 — 방향성 불확실</td>
+<td>비농업고용 MoM 증감(천명)(분기) / VIX 변동성지수(매월) / 설비가동률(%)(분기)</td>
+<td>분기 1회 Factor Pool 전체 재평가</td>
+</tr>
+<tr>
+<td><strong>Contraction</strong></td>
+<td>선행 Factor 하락 전환</td>
+<td>비농업고용 MoM 증감(천명)(분기) / VIX 변동성지수(매월) / 설비가동률(%)(분기)</td>
+<td>조기 경보 발동, 클라이언트 리스크 재검토</td>
+</tr>
+</tbody>
+</table>
+<h3 id="factor-vs">Factor 활용 분류: 모니터링 전용 vs 의사결정 트리거</h3>
+<blockquote>
+<p><strong>오퍼레이션 컨설팅 핵심 원칙</strong>: 통계적으로 유효한 선행지표라도 클라이언트가 직접 통제할 수 없는 외부 변수라면 <strong>모니터링 도구</strong>로만 활용한다. 선행 신호를 포착한 뒤 클라이언트가 실제로 조정할 수 있는 내부 변수에 연결하는 것이 분석의 목적이다.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>분류</th>
+<th>Factor</th>
+<th>FRED ID</th>
+<th>클라이언트 통제 가능성</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>모니터링 전용</strong> (외부 환경)</td>
+<td>연방기금금리</td>
+<td>FEDFUNDS</td>
+<td>✗ 연준 정책 — 수용만 가능</td>
+</tr>
+<tr>
+<td></td>
+<td>10Y-2Y 스프레드</td>
+<td>T10Y2Y</td>
+<td>✗ 시장 결정</td>
+</tr>
+<tr>
+<td></td>
+<td>소비자물가</td>
+<td>CPIAUCSL</td>
+<td>✗ 거시 환경</td>
+</tr>
+<tr>
+<td></td>
+<td>생산자물가</td>
+<td>PPIACO</td>
+<td>✗ 원자재 시장</td>
+</tr>
+<tr>
+<td></td>
+<td>WTI 유가</td>
+<td>DCOILWTICO</td>
+<td>✗ 글로벌 에너지 시장</td>
+</tr>
+<tr>
+<td></td>
+<td>VIX 변동성</td>
+<td>VIXCLS</td>
+<td>✗ 시장 심리</td>
+</tr>
+<tr>
+<td></td>
+<td>USD/EUR 환율</td>
+<td>DEXUSEU</td>
+<td>✗ 외환시장</td>
+</tr>
+<tr>
+<td></td>
+<td>M2 통화량</td>
+<td>M2SL</td>
+<td>✗ 통화정책</td>
+</tr>
+<tr>
+<td></td>
+<td>소비자심리</td>
+<td>UMCSENT</td>
+<td>✗ 서베이 기반, 후행 가능</td>
+</tr>
+<tr>
+<td><strong>의사결정 트리거</strong> (내부 연동)</td>
+<td>설비가동률</td>
+<td>TCU</td>
+<td>△ 생산 스케줄 조정 가능</td>
+</tr>
+<tr>
+<td></td>
+<td>비농업고용 증감</td>
+<td>PAYEMS</td>
+<td>△ 인력 계획 결정에 연동</td>
+</tr>
+<tr>
+<td></td>
+<td>소매판매</td>
+<td>RETAILSMNSA</td>
+<td>△ 재고·생산 계획 반응 가능</td>
+</tr>
+<tr>
+<td></td>
+<td>실업률</td>
+<td>UNRATE</td>
+<td>△ 인력 확보 전략 선행 근거</td>
+</tr>
+</tbody>
+</table>
+<h3 id="signal-to-action">신호 → 행동 매핑 (Signal-to-Action)</h3>
+<blockquote>
+<p>모니터링 전용 Factor는 신호를 포착한 후 <strong>내부 의사결정 트리거</strong>로 전환하는 과정이 필요하다.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>선행 신호 (Lag)</th>
+<th>임계 조건</th>
+<th>클라이언트 대응 행동</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FEDFUNDS ↑ (+6M)</td>
+<td>연속 2개월 상승</td>
+<td>차입 비용 상승 예상 → 투자 계획 재검토, 단기 현금 보유 확대</td>
+</tr>
+<tr>
+<td>FEDFUNDS ↓ (+6M)</td>
+<td>연속 2개월 하락</td>
+<td>자금조달 환경 개선 → 설비 투자 타이밍 검토</td>
+</tr>
+<tr>
+<td>PAYEMS ↓ (+11M)</td>
+<td>MoM 감소 전환</td>
+<td>노동 수요 약화 선행 → 신규 채용 동결, 유연 인력 계약 검토</td>
+</tr>
+<tr>
+<td>TCU ↓</td>
+<td>2개월 연속 하락</td>
+<td>과잉 설비 리스크 → 유지보수 기간 확보, 가동 스케줄 조정</td>
+</tr>
+<tr>
+<td>RETAILSMNSA ↓</td>
+<td>MoM 연속 하락</td>
+<td>소비 수요 약화 → 재고 감축, 생산 계획 하향 조정</td>
+</tr>
+<tr>
+<td>VIXCLS ↑ 급등</td>
+<td>30 이상</td>
+<td>불확실성 고조 → 주요 투자 결정 보류, 시나리오 분기 재점검</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠ <strong>제약사항 명기</strong>: 본 분석은 공개 거시지표(FRED) 기반으로, 실제 클라이언트 내부 데이터(공정 파라미터, 재고 레벨, 수주잔고 등)와 결합할 경우 신호의 정밀도가 크게 향상된다. 거시 Factor는 방향성과 타이밍을 제공하며, 실행 규모는 내부 데이터로 보정해야 한다.</p>
+</blockquote>
+<h3 id="_3">클라이언트 설명 프레임</h3>
+<p>현재 레짐: <strong>Expansion (안정)</strong>. FEDFUNDS 하락 신호(6M 선행)가 생산 확대 환경을 지지하나, PAYEMS 증감 추이가 반전될 경우 즉시 인력·설비 계획을 재검토해야 한다. 모니터링 주기: FEDFUNDS·VIXCLS 매월 / TCU·PAYEMS 분기 1회.</p>
+<hr />
+<p><em>본 보고서는 FRED 공공 데이터를 기반으로 자동 생성되었습니다.<br />
+수치 해석 시 출처(FRED)와 분석 기간을 반드시 명기하십시오.<br />
+실제 오퍼레이션 의사결정 시 내부 데이터와의 결합 보정을 권고합니다.</em></p>
+<hr />
+<h2 id="a">부록 A: 방법론</h2>
+<table>
+<thead>
+<tr>
+<th>단계</th>
+<th>방법</th>
+<th>파라미터</th>
+<th>목적</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>레짐 분류</td>
+<td>GMM 3-state</td>
+<td>n_components=3</td>
+<td>거시 국면 구분</td>
+</tr>
+<tr>
+<td>Factor 선별</td>
+<td>LASSO (LassoCV)</td>
+<td>CV Folds=5, α=0.020252</td>
+<td>희소 선형 선별</td>
+</tr>
+<tr>
+<td>상관관계</td>
+<td>Pearson (시차별)</td>
+<td>lag=0·3·6·12개월</td>
+<td>동시적·지연 상관</td>
+</tr>
+<tr>
+<td>선행성 검증</td>
+<td>Granger F-test</td>
+<td>ADF 정상화, maxlag=12</td>
+<td>시간적 인과성</td>
+</tr>
+<tr>
+<td>선행성 교차검증</td>
+<td>Cross-correlation</td>
+<td>MoM% 변환, ±12개월</td>
+<td>Granger 결과 보완</td>
+</tr>
+<tr>
+<td>ML 중요도</td>
+<td>Random Forest</td>
+<td>n=100, seed=42</td>
+<td>비선형 기여도</td>
+</tr>
+<tr>
+<td>안정성</td>
+<td>Rolling OLS</td>
+<td>window=36개월</td>
+<td>계수 불안정 탐지</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Granger 강도 기준</strong>: STRONG p&lt;0.01 / MODERATE p&lt;0.05 / WEAK p&lt;0.1</p>
+<p><strong>⚠ Vintage 데이터 주의</strong>: FRED 데이터는 발표 후 수정(revision)이 반영된 역사적 값입니다.<br />
+실시간 예측 시스템에서는 발표 당시 원본값(real-time vintage)과 차이가 발생할 수 있으며,<br />
+이 분석의 Granger 인과관계는 <strong>역사적 수정값 기준</strong>임을 명기합니다.</p>
+<p><strong>⚠ 구조 변화(Structural Break) 주의</strong>: 분석 기간(2000-02 ~ 2025-11, 309개월)에는<br />
+성격이 다른 통화정책 국면이 혼재합니다.<br />
+- <strong>ZLB(Zero Lower Bound) 구간</strong>: 2009-01 ~ 2015-12, 2020-03 ~ 2022-02 — 금리 0%로 FEDFUNDS 등 금리 계열의 Granger 인과관계가 정상 작동하지 않을 수 있음<br />
+- <strong>GMM 클러스터</strong>: 전 기간 분포 기준으로 경계 산정. 특정 시기를 집중 분석할 경우 최근 창(예: 2015 이후)으로 재추정 권고<br />
+- Granger STRONG 결과가 많을 경우 데이터 길이(309개월)에 의한 과소 p-value 가능성을 검토하십시오<br />
+- <strong>다중 검정(Multiple Testing) 주의</strong>: 16개 Factor에 동시 Granger 검정 시, 5% 유의수준에서 우연히 유의한 결과가 기댓값 ~0.8개 발생. 보수적 해석 시 Bonferroni 보정 기준(p &lt; 0.05/16 ≈ 0.003)을 적용하면 WEAK·일부 MODERATE는 탈락. 본 보고서는 미보정 기준으로 제시하며, 실전 활용 시 FDR(Benjamini-Hochberg) 보정 적용을 권고.</p>
+<h2 id="b">부록 B: 전체 데이터 테이블</h2>
+<h3 id="b-1-lasso-factor">B-1. LASSO 선별 Factor (전체)</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>지표명</th>
+<th>계수</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PAYEMS</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>0.7992</td>
+</tr>
+<tr>
+<td>UNRATE</td>
+<td>실업률</td>
+<td>0.2438</td>
+</tr>
+<tr>
+<td>HOUST</td>
+<td>주택착공 MoM%</td>
+<td>0.1593</td>
+</tr>
+<tr>
+<td>VIXCLS</td>
+<td>VIX 변동성지수</td>
+<td>-0.0649</td>
+</tr>
+<tr>
+<td>M2SL</td>
+<td>M2 통화량 MoM%</td>
+<td>-0.0571</td>
+</tr>
+<tr>
+<td>RETAILSMNSA</td>
+<td>소매판매 MoM%</td>
+<td>0.0543</td>
+</tr>
+<tr>
+<td>DGS2</td>
+<td>2Y Treasury Yield</td>
+<td>0.0532</td>
+</tr>
+<tr>
+<td>TCU</td>
+<td>설비가동률(%)</td>
+<td>0.0430</td>
+</tr>
+<tr>
+<td>DEXUSEU</td>
+<td>USD/EUR 환율</td>
+<td>-0.0347</td>
+</tr>
+<tr>
+<td>PPIACO</td>
+<td>PPI MoM%</td>
+<td>0.0309</td>
+</tr>
+<tr>
+<td>DGS10</td>
+<td>10Y Treasury Yield</td>
+<td>0.0182</td>
+</tr>
+<tr>
+<td>UMCSENT</td>
+<td>미시간 소비자심리</td>
+<td>0.0180</td>
+</tr>
+<tr>
+<td>DCOILWTICO</td>
+<td>WTI 유가 MoM%</td>
+<td>0.0164</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b-2">B-2. 상관관계 분석 (전체)</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>지표명</th>
+<th>상관계수</th>
+<th>p-value</th>
+<th>최적 Lag(월)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PAYEMS</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>0.779</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>M2SL</td>
+<td>M2 통화량 MoM%</td>
+<td>-0.391</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>DCOILWTICO</td>
+<td>WTI 유가 MoM%</td>
+<td>0.371</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>HOUST</td>
+<td>주택착공 MoM%</td>
+<td>0.360</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>PPIACO</td>
+<td>PPI MoM%</td>
+<td>0.280</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>VIXCLS</td>
+<td>VIX 변동성지수</td>
+<td>-0.239</td>
+<td>0.0000</td>
+<td>0</td>
+</tr>
+<tr>
+<td>TCU</td>
+<td>설비가동률(%)</td>
+<td>-0.189</td>
+<td>0.0011</td>
+<td>12</td>
+</tr>
+<tr>
+<td>UNRATE</td>
+<td>실업률</td>
+<td>0.181</td>
+<td>0.0014</td>
+<td>3</td>
+</tr>
+<tr>
+<td>RETAILSMNSA</td>
+<td>소매판매 MoM%</td>
+<td>0.146</td>
+<td>0.0102</td>
+<td>0</td>
+</tr>
+<tr>
+<td>FEDFUNDS</td>
+<td>Fed Funds Rate</td>
+<td>-0.117</td>
+<td>0.0442</td>
+<td>12</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b-3-granger">B-3. Granger 인과관계 (전체)</h3>
+<table>
+<thead>
+<tr>
+<th>Factor</th>
+<th>지표명</th>
+<th>강도</th>
+<th>최적 Lag(월)</th>
+<th>p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>FEDFUNDS</td>
+<td>Fed Funds Rate</td>
+<td>STRONG</td>
+<td>6</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>UNRATE</td>
+<td>실업률</td>
+<td>STRONG</td>
+<td>7</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>PAYEMS</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>STRONG</td>
+<td>11</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>M2SL</td>
+<td>M2 통화량 MoM%</td>
+<td>STRONG</td>
+<td>5</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>DCOILWTICO</td>
+<td>WTI 유가 MoM%</td>
+<td>STRONG</td>
+<td>1</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>VIXCLS</td>
+<td>VIX 변동성지수</td>
+<td>STRONG</td>
+<td>2</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>DGS2</td>
+<td>2Y Treasury Yield</td>
+<td>STRONG</td>
+<td>2</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>PPIACO</td>
+<td>PPI MoM%</td>
+<td>STRONG</td>
+<td>1</td>
+<td>&lt; 0.0001</td>
+</tr>
+<tr>
+<td>DGS10</td>
+<td>10Y Treasury Yield</td>
+<td>STRONG</td>
+<td>1</td>
+<td>0.0001</td>
+</tr>
+<tr>
+<td>TCU</td>
+<td>설비가동률(%)</td>
+<td>STRONG</td>
+<td>10</td>
+<td>0.0016</td>
+</tr>
+<tr>
+<td>RETAILSMNSA</td>
+<td>소매판매 MoM%</td>
+<td>MODERATE</td>
+<td>12</td>
+<td>0.0114</td>
+</tr>
+<tr>
+<td>UMCSENT</td>
+<td>미시간 소비자심리</td>
+<td>MODERATE</td>
+<td>2</td>
+<td>0.0225</td>
+</tr>
+<tr>
+<td>CPIAUCSL</td>
+<td>CPI YoY%</td>
+<td>MODERATE</td>
+<td>1</td>
+<td>0.0376</td>
+</tr>
+<tr>
+<td>DEXUSEU</td>
+<td>USD/EUR 환율</td>
+<td>WEAK</td>
+<td>7</td>
+<td>0.0626</td>
+</tr>
+<tr>
+<td>HOUST</td>
+<td>주택착공 MoM%</td>
+<td>WEAK</td>
+<td>2</td>
+<td>0.0814</td>
+</tr>
+</tbody>
+</table>
+<h2 id="c">부록 C: 현재 사이클 집중 분석</h2>
+<blockquote>
+<p><strong>분석 기간</strong>: 2000-02 ~ 2025-11 (309개월)<br />
+<strong>방법</strong>: ruptures PELT (rbf), pen=15.0, min_size=6개월<br />
+Granger maxlag=6, Rolling 창=24개월.</p>
+<p><strong>60개월 고정 창을 쓰지 않는 이유</strong>: 임의의 달력 주기(예: 60개월)는 경제적 근거가 없다. 시작점에 따라 2008 금융위기나 2020 팬데믹을 포함하거나 배제하며 결과가 달라진다. PELT는 데이터 분산 구조 변화를 통계적으로 탐지해 <strong>사이클 경계를 데이터 구동적으로 결정</strong>한다. "왜 이 기간을 기준으로 삼았는가"라는 질문에 달력 임의성이 아닌 통계적 근거로 답할 수 있다는 점이 컨설팅 맥락에서 중요하다.</p>
+<p>고정 캘린더 창(예: "최근 60개월") 대신 <strong>PELT 구조 변화 탐지로 정의된 현재 사이클 세그먼트</strong>를 분석합니다.<br />
+개별 기업 분석 시에도 동일한 원리 적용: 협업 발표·사업 모델 전환 이벤트 전후로 세그먼트를 분리합니다.</p>
+</blockquote>
+<h3 id="c-1-granger-vs">C-1. Granger 선행성 — 장기 vs 현재 사이클 비교</h3>
+<table>
+<thead>
+<tr>
+<th>구분</th>
+<th>Factor(지표명)</th>
+<th>컨설팅 함의</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>지속 선행 (양기간 공통)</td>
+<td>비농업고용 MoM 증감(천명), VIX 변동성지수, 설비가동률(%), M2 통화량 MoM%, PPI MoM%, CPIAUCSL, WTI 유가 MoM%, 2Y Treasury Yield, Fed Funds Rate, 미시간 소비자심리, 10Y Treasury Yield, 실업률</td>
+<td>구조적 선행 — 높은 신뢰도</td>
+</tr>
+<tr>
+<td>현 사이클 부상</td>
+<td>없음</td>
+<td>현 사이클 특이 요인 — 추적 강화</td>
+</tr>
+<tr>
+<td>현 사이클 약화</td>
+<td>소매판매 MoM%</td>
+<td>관계 소멸 가능 — 재검증 필요</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c-2-lasso-vs">C-2. LASSO 선별 — 장기 vs 현재 사이클 비교</h3>
+<table>
+<thead>
+<tr>
+<th>구분</th>
+<th>Factor(지표명)</th>
+<th>컨설팅 함의</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>지속 선별 (양기간 공통)</td>
+<td>비농업고용 MoM 증감(천명), 소매판매 MoM%, USD/EUR 환율, VIX 변동성지수, 설비가동률(%), M2 통화량 MoM%, PPI MoM%, WTI 유가 MoM%, 2Y Treasury Yield, 주택착공 MoM%, 미시간 소비자심리, 10Y Treasury Yield, 실업률</td>
+<td>장단기 모두 유효</td>
+</tr>
+<tr>
+<td>현 사이클 부상</td>
+<td>없음</td>
+<td>현 사이클 특이 요인</td>
+</tr>
+<tr>
+<td>현 사이클 약화</td>
+<td>없음</td>
+<td>역할 약화 — 모니터링 축소 검토</td>
+</tr>
+</tbody>
+</table>
+<h3 id="c-3-rolling-ols-24">C-3. 현재 사이클 Rolling OLS 안정성 (24개월 창)</h3>
+<table>
+<thead>
+<tr>
+<th>구분</th>
+<th>Factor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>안정</strong></td>
+<td>없음</td>
+</tr>
+<tr>
+<td><strong>불안정</strong></td>
+<td>PAYEMS, UNRATE, HOUST, VIXCLS, M2SL</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>해석 지침</strong>: 장기에서 안정 → 현재 사이클에서 불안정으로 전환된 Factor는<br />
+구조 변화의 전형적 신호입니다. 현재 사이클에서 새로 안정화된 Factor가<br />
+이번 사이클의 실질 선행지표 후보입니다.</p>
+</blockquote>
+<h2 id="d-company-event">부록 D: Company Event × 매크로 레짐 연동 분석</h2>
+<blockquote>
+<p><strong>방법론</strong>: GMM 3-state 레짐(Expansion/Neutral/Contraction)을 개별 기업 이벤트 시점에 오버레이.<br />
+매크로 Factor Pool 분석(INDPRO 기준)과 기업 구조 변화의 정합성을 시각화합니다.</p>
+</blockquote>
+<p><strong>케이스 선정 근거</strong></p>
+<table>
+<thead>
+<tr>
+<th>기업</th>
+<th>선정 이유</th>
+<th>검증하려는 가설</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Samsung Electronics</strong></td>
+<td>① 제조업 대표 — 오퍼레이션 컨설팅 핵심 클라이언트 섹터 ② AI 파운드리 피벗(Tesla 2nm 계약)이라는 명확한 구조 전환 이벤트 ③ INDPRO Factor Pool(설비가동률·고용·PPI)과 직접 연동 가능</td>
+<td>매크로 Expansion이 AI 제조 수요 확대를 실제로 뒷받침했는가?</td>
+</tr>
+<tr>
+<td><strong>Reddit (RDDT)</strong></td>
+<td>① <strong>대비 사례</strong>: 매크로 레짐과 무관하게 구조 변화가 발생한 기업 ② AI 데이터 수익화는 어닝 서프라이즈(2024-10)로 주도 — 경기 사이클 독립 ③ Factor Pool의 <strong>적용 한계</strong>를 실증하는 반례</td>
+<td>거시 Factor가 기업 특유 구조 변화를 설명하지 못하는 조건은 무엇인가?</td>
+</tr>
+</tbody>
+</table>
+<p>두 케이스를 함께 제시한 이유: Factor Pool이 "언제 유효하고 언제 유효하지 않은지"의 경계를 실증해야 분석의 신뢰도가 높아진다. Samsung은 Factor Pool이 설명하는 케이스, Reddit은 설명하지 못하는 케이스로 쌍을 구성했다.</p>
+<h3 id="d-1-gmm">D-1. 핵심 이벤트 시점별 GMM 레짐</h3>
+<table>
+<thead>
+<tr>
+<th>이벤트</th>
+<th>날짜(YM)</th>
+<th>GMM 레짐</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reddit — OpenAI 계약</td>
+<td>2024-05</td>
+<td>Neutral</td>
+</tr>
+<tr>
+<td>Reddit — Q3 어닝 주가 급등</td>
+<td>2024-10</td>
+<td>Neutral</td>
+</tr>
+<tr>
+<td>Reddit — Dynp break 1</td>
+<td>2025-01</td>
+<td>Neutral</td>
+</tr>
+<tr>
+<td>Samsung — Tesla 2nm 계약</td>
+<td>2025-07</td>
+<td>Expansion</td>
+</tr>
+<tr>
+<td>Samsung — Dynp break</td>
+<td>2025-08</td>
+<td>Neutral</td>
+</tr>
+</tbody>
+</table>
+<h3 id="d-2">D-2. 연동 패턴 비교</h3>
+<table>
+<thead>
+<tr>
+<th>항목</th>
+<th>Samsung Electronics</th>
+<th>Reddit (RDDT)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>이벤트</td>
+<td>Tesla 2nm 파운드리 계약 (2025-07-28)</td>
+<td>OpenAI 파트너십 (2024-05-16)</td>
+</tr>
+<tr>
+<td>이벤트 시점 레짐</td>
+<td><strong>Expansion</strong></td>
+<td>Neutral</td>
+</tr>
+<tr>
+<td>Dynp break 시점 레짐</td>
+<td>Neutral (2025-08)</td>
+<td>Neutral (2025-01)</td>
+</tr>
+<tr>
+<td>매크로 연동</td>
+<td><strong>연동</strong> — AI 제조 수요 확장과 타이밍 정합</td>
+<td><strong>비연동</strong> — 사이클 무관 구조 변화</td>
+</tr>
+<tr>
+<td>포트폴리오 서사</td>
+<td>매크로 Expansion이 AI 파운드리 피벗 성공의 배경</td>
+<td>AI 데이터 수익화는 경기 사이클을 초월한 독자 전환</td>
+</tr>
+</tbody>
+</table>
+<h3 id="d-3">D-3. 방법론 해석</h3>
+<p><img alt="Company Event × 매크로 레짐 오버레이" src="outputs/charts/company_regime_overlay_20260304.png" /></p>
+<ul>
+<li><strong>Samsung</strong>: Tesla 계약(2025-07)이 Expansion 국면에서 체결 → 매크로 생산 확대 수요가<br />
+  AI 파운드리 사업의 실수요를 뒷받침. Factor Pool의 PAYEMS(고용 선행)·M2SL(유동성)이<br />
+  동 기간 STRONG 신호를 유지한 것과 방향 일치.</li>
+<li><strong>Reddit</strong>: 계약(2024-05)부터 break(2025-01)까지 모든 핵심 시점이 Neutral.<br />
+  원인은 금리 인하(2024-09)가 아니라 <strong>Q3 어닝(2024-10-29)을 통한 AI 매출 실적 확인</strong> →<br />
+  시장이 발표(5월) 아닌 증거(10월) 이후 구조 재평가. 이는 Factor Pool의 매크로 신호와<br />
+  독립적인 기업 특유 구조 변화임.</li>
+<li><strong>방법론 한계</strong>: GMM은 INDPRO MoM%를 기준으로 학습. 주가 수익률과의 직접 Granger<br />
+  검증은 미구현(향후 확장 가능). 현재 레짐 오버레이는 <strong>배경 조건 확인</strong> 수준.</li>
+</ul>
+<blockquote>
+<p><strong>분석 프레임 명시 — 예측이 아닌 레짐 조건부 특성화</strong></p>
+<p>본 분석은 "Factor Pool이 주가를 예측하는가?"를 묻지 않는다. 주가에는 개별 기업 효과뿐 아니라 전쟁·금리 발표 등 시장 전체 충격이 뒤섞여 있어, 매크로 Factor만으로 주가 방향을 예측하는 것은 attribution 오류를 낳는다.</p>
+<p>대신 이 분석이 묻는 질문: <strong>"동일한 이벤트 유형(파운드리 계약, AI 파트너십)이 Expansion 레짐에서 발생했을 때와 Neutral 레짐에서 발생했을 때, 사후 구조 변화의 지속성이 다른가?"</strong></p>
+<p>이 프레임에서 시장 전체 충격은 통제 대상이 아니라 <strong>레짐 자체에 이미 반영</strong>되어 있다. Expansion 레짐은 "시장 전체가 팽창하는 환경"을 의미하므로, 동일 환경에서 기업 이벤트가 발생했다는 사실이 곧 배경 조건을 통제한 것이다.</p>
+<p><strong>한계 명기</strong>: 케이스 2개(5 이벤트)는 통계적 유의성 주장이 불가능하다. Samsung·Reddit은 방법론의 논리를 예시하는 수준이며, 동일 프레임을 산업별 다수 기업 이벤트로 확장할 경우 레짐별 초과수익률(CAR) 비교를 통한 정량 검증이 가능하다.</p>
+</blockquote>
+<h2 id="e-multi-perspective-debate">부록 E: 멀티관점 토론 (Multi-Perspective Debate)</h2>
+<blockquote>
+<p><strong>설계 원칙</strong> (spec.md Section 7): 동일 분석 데이터를 3관점에서 독립 해석.<br />
+공통 신호 = 강한 증거 / 불일치 = 구조 변화 리스크로 클라이언트에 전달.</p>
+</blockquote>
+<h3 id="e-1">E-1. 관점별 결론</h3>
+<table>
+<thead>
+<tr>
+<th>관점</th>
+<th>결론</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>매크로 관점</td>
+<td>[주의] Expansion 우세 (일부 역신호)</td>
+</tr>
+<tr>
+<td>실물경제 관점</td>
+<td>[양호] Expansion 지속</td>
+</tr>
+<tr>
+<td>비용·심리 관점</td>
+<td>[혼조] 방향 불명확</td>
+</tr>
+</tbody>
+</table>
+<p><strong>종합 합의</strong>: [경계] <strong>Moderate Confidence</strong> — 2관점 Expansion, 1관점 역신호</p>
+<h3 id="e-2-factor">E-2. Factor별 상세 신호</h3>
+<table>
+<thead>
+<tr>
+<th>관점</th>
+<th>Factor</th>
+<th>현재값</th>
+<th>방향(Exp 정합)</th>
+<th>Granger 강도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>매크로 관점</td>
+<td>Fed Funds Rate</td>
+<td>3.64</td>
+<td>↓ (✓)</td>
+<td>STRONG</td>
+</tr>
+<tr>
+<td>매크로 관점</td>
+<td>10Y-2Y Yield Spread</td>
+<td>0.65</td>
+<td>↑ (✓)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>매크로 관점</td>
+<td>10Y Treasury Yield</td>
+<td>4.13</td>
+<td>↓ (✗)</td>
+<td>STRONG</td>
+</tr>
+<tr>
+<td>실물경제 관점</td>
+<td>비농업고용 MoM 증감(천명)</td>
+<td>130.00</td>
+<td>↑ (✓)</td>
+<td>STRONG</td>
+</tr>
+<tr>
+<td>실물경제 관점</td>
+<td>실업률</td>
+<td>4.30</td>
+<td>↓ (✓)</td>
+<td>STRONG</td>
+</tr>
+<tr>
+<td>실물경제 관점</td>
+<td>소매판매 MoM%</td>
+<td>-0.35</td>
+<td>↑ (✓)</td>
+<td>MODERATE</td>
+</tr>
+<tr>
+<td>비용·심리 관점</td>
+<td>WTI 유가 MoM%</td>
+<td>3.57</td>
+<td>↑ (✗)</td>
+<td>STRONG</td>
+</tr>
+<tr>
+<td>비용·심리 관점</td>
+<td>PPI MoM%</td>
+<td>0.27</td>
+<td>↓ (✓)</td>
+<td>STRONG</td>
+</tr>
+<tr>
+<td>비용·심리 관점</td>
+<td>VIX 변동성지수</td>
+<td>19.21</td>
+<td>↑ (✗)</td>
+<td>STRONG</td>
+</tr>
+<tr>
+<td>비용·심리 관점</td>
+<td>설비가동률(%)</td>
+<td>76.21</td>
+<td>↑ (✓)</td>
+<td>STRONG</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>✓ = 해당 방향이 Expansion 정합 / ✗ = 역방향 (Neutral·Contraction 우호)</p>
+</blockquote>
+<h3 id="e-3">E-3. 해석 가이드</h3>
+<table>
+<thead>
+<tr>
+<th>합의 등급</th>
+<th>의미</th>
+<th>권고</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>High Confidence</td>
+<td>3관점 동일 방향</td>
+<td>현 시나리오(Expansion) 신뢰도 높음 — 포지션 유지</td>
+</tr>
+<tr>
+<td>Moderate</td>
+<td>2:1 분할</td>
+<td>소수 의견 Factor 집중 모니터링 — 분기 재평가</td>
+</tr>
+<tr>
+<td>Caution</td>
+<td>2관점 이상 역신호</td>
+<td>레짐 전환 선제 대응 체계 가동</td>
+</tr>
+<tr>
+<td>Uncertain</td>
+<td>3관점 모두 다름</td>
+<td>구조 변화 구간 — 모든 포지션 재검토</td>
+</tr>
+</tbody>
+</table>
+<p><strong>현재 등급</strong>: <strong>Moderate</strong></p>
+</body>
+</html>

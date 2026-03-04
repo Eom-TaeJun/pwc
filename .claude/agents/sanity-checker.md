@@ -1,16 +1,14 @@
 ---
 name: sanity-checker
-description: >
+description: |
   분석 결과 수치의 현실 타당성을 검증하는 에이전트.
   "이 숫자가 경제적으로 말이 되는가?"를 체크.
   호출 조건: 분석 완료 후 수치 검증, sanity check 요청, analysis JSON 생성 직후.
   outputs/context/analysis_*.json 을 직접 읽어
   GMM 레짐·Granger·Lead-Lag·LASSO 수치를 교차 검증한다.
 model: claude-sonnet-4-6
-tools:
-  - Bash
-  - Read
-  - Glob
+color: yellow
+tools: ["Bash", "Read", "Glob"]
 ---
 
 ## 역할

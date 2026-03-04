@@ -43,6 +43,22 @@ PwC 오퍼레이션 컨설팅 RA 포트폴리오를 위한 **실전급 Factor �
 **핵심 원칙**: 지능은 Skills에 → 데이터는 Python에 → 조율은 Agents에.
 **SKILL.md 크기**: 핵심 지침만 (~100줄), 상세 내용은 `references/` 서브파일로 분리.
 
+## 🗺️ Skill Activation Mapping
+
+> CLAUDE.md의 요약판. 어떤 작업에 어떤 스킬/에이전트를 써야 하는지.
+
+| 작업 | 자동 활성화 스킬/에이전트 |
+|------|----------------------|
+| Factor 선별·Granger·LASSO 해석 | skill: `factor-research` |
+| MD 보고서 작성 (`/generate-report`) | skill: `consulting-context` → agent: `report-writer` |
+| 전체 파이프라인 실행 (`--all`) | agent: `pwc-lead` → collector → analyst → writer |
+| FRED 데이터 수집 (`--factors`) | agent: `factor-collector` (haiku, 경량) |
+| 수치 타당성 검증 | agent: `sanity-checker` |
+| 하니스 레이어 점검 | agent: `harness-checker` (`/harness-check`) |
+| RA 포트폴리오 현업 검토 | agent: `pwc-reviewer` |
+
+---
+
 ## 🚫 Critical Constraints (Never)
 - **NEVER** `outputs/` 외부 저장 금지
 - **NEVER** `.env` API KEY 노출 금지

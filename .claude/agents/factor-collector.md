@@ -26,30 +26,29 @@ Working directory: ~/projects/pwc/
 FRED API에서 거시경제 Factor 20개를 수집해 구조화된 JSON으로 저장한다.
 판단과 해석은 하지 않는다 — 수집과 저장만 수행한다.
 
-## 수집 대상 Factor Pool (20개)
+## 수집 대상 Factor Pool (16개 + Target 1개)
 
-| FRED 시리즈 ID | 변수명 | 경제적 의미 |
-|---|---|---|
-| INDPRO | 산업생산지수 | **Target 변수** (MoM%) |
-| T10Y2Y | 10Y-2Y 스프레드 | 경기 선행지표 |
-| FEDFUNDS | 연방기금금리 | 통화정책 |
-| CPIAUCSL | 소비자물가지수 | 인플레이션 |
-| UNRATE | 실업률 | 노동시장 |
-| HOUST | 주택착공건수 | 건설경기 |
-| DCOILWTICO | WTI 원유가 | 에너지/공급 |
-| M2SL | M2 통화량 | 유동성 |
-| UMCSENT | 소비자심리지수 | 기대심리 |
-| PPIACO | 생산자물가지수 | 원가 압력 |
-| PERMIT | 건축허가건수 | 선행 건설 |
-| ACDGNO | 내구재 주문 | 제조 선행 |
-| RETAILSMNSA | 소매판매 | 소비 동향 |
-| ISRATIO | 재고/판매 비율 | 공급망 |
-| PAYEMS | 비농업 고용 | 고용 총량 |
-| KCFSI | 캔자스시티 금융스트레스 | 금융여건 |
-| BAMLH0A0HYM2 | 하이일드 스프레드 | 신용 리스크 |
-| VIXCLS | VIX 변동성지수 | 시장 불안 |
-| DGS10 | 10년 국채금리 | 장기 금리 |
-| DGS2 | 2년 국채금리 | 단기 금리 |
+> `src/collect.py` SERIES_META 기준 — 이 목록이 유일한 진실.
+
+| FRED 시리즈 ID | 변수명 | 변환 | 경제적 의미 |
+|---|---|---|---|
+| INDPRO | 산업생산지수 | MoM% | **Target 변수** |
+| FEDFUNDS | 연방기금금리 | level | 통화정책 |
+| DGS10 | 10Y 국채금리 | level | 장기 자금조달 |
+| DGS2 | 2Y 국채금리 | level | 단기 자금조달 |
+| T10Y2Y | 10Y-2Y 스프레드 | level | 경기 선행 |
+| CPIAUCSL | CPI YoY% | YoY% | 소비 물가 |
+| PPIACO | PPI MoM% | MoM% | 원가 압력 |
+| UNRATE | 실업률 | level | 노동시장 |
+| PAYEMS | 비농업고용 증감 | diff(천명) | 고용 선행 |
+| RETAILSMNSA | 소매판매 MoM% | MoM% | 소비 수요 |
+| HOUST | 주택착공 MoM% | MoM% | 건설 선행 |
+| UMCSENT | 미시간 소비자심리 | level | 기대심리 |
+| M2SL | M2 통화량 MoM% | MoM% | 유동성 |
+| DEXUSEU | USD/EUR 환율 | level | 수출입 경쟁력 |
+| DCOILWTICO | WTI 유가 MoM% | MoM% | 에너지 비용 |
+| VIXCLS | VIX 변동성지수 | level | 시장 불확실성 |
+| TCU | 설비가동률(%) | level | 생산 여력 직접 측정 |
 
 ## 실행 흐름
 
